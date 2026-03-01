@@ -19,7 +19,8 @@ class KnowledgeManager():
         self.embedder = embedder
         self.collection_name = collection_name
         self.vector_db = QdrantDBManager(location=":localhost:")
-        self.graph_db = Neo4jDBManager(uri=os.getenv("NEO4J_URI"), user=os.getenv("NEO4J_USERNAME"), password=os.getenv("NEO4J_PASSWORD"))
+        self.graph_db = Neo4jDBManager()
+        # self.graph_db = Neo4jDBManager(uri=os.getenv("NEO4J_URI"), user=os.getenv("NEO4J_USERNAME"), password=os.getenv("NEO4J_PASSWORD"))
         self.vector_db.create_collection('test', 768)
 
     def _create_nodes_relations_embeddings(self, graph_info:GraphInfo):

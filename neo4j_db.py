@@ -177,3 +177,23 @@ class Neo4jDBManager:
 
         with self.driver.session() as session:
             return session.execute_write(_execute_rel_create)
+
+    def get_k_hop_subgraph(self, node_ids: list[str], depth: int = 1):
+        query = f"""
+        MATCH (n)
+        WHERE elementId(n) IN $node_ids
+        CALL apoc.path.subgraphAll(n, {{
+            maxLevel: {depth}
+        }})
+        YIELD nodes, relationships
+        RETURN nodes, relationships
+        """
+
+        with self.driver.session() as session:
+            result = session.run(query, node_ids=node_ids)
+            record = result.single()
+            return {
+                "nodes": record["nodes"],
+                "relationships": record["relationships"]
+            }
+    

@@ -52,10 +52,12 @@ class QdrantDBManager:
         """
         Create/Update (Upsert) points into a collection in Qdrant.
         """
+        # TODO: ci serve mantenere gli ids se non li utilizziamo?
         return self.client.upload_collection(
             collection_name=collection_name,
             vectors=points,
-            payload=payloads
+            payload=payloads,
+            # ids=ids
         )
 
     def retrieve_points(self, collection_name: str, point_ids: List[Union[int, str]]) -> List[Any]:

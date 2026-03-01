@@ -42,6 +42,4 @@ class Chat:
                 stream = streaming,
             )
             return output['choices'][0]['message']['content']
-
-
-        
+    
