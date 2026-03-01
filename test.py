@@ -2,6 +2,9 @@ from agents import Chat
 from embedder import Embedder
 from knowledge_manager import KnowledgeManager
 
+embedder = None
+chat = None
+
 # models initialization
 embedder = Embedder()
 chat = Chat(

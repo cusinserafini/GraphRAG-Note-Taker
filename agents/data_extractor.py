@@ -1,4 +1,3 @@
-from sympy.multipledispatch.conflict import edge
 import re
 from .chat import Chat
 from .agent import Agent

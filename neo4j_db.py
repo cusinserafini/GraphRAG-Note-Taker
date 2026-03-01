@@ -36,12 +36,13 @@ class Neo4jDBManager:
             int: The Neo4j internal ID of the created node.
         """
         query = (
-            f"CREATE (n:{label} $properties) "
+            f"MERGE (n:{label} {{name: $name, description: $description}}) "
+            "SET n += $properties "
             "RETURN elementId(n) AS node_id"
         )
         
         def _execute_create(tx):
-            result = tx.run(query, properties=properties)
+            result = tx.run(query, properties=properties, name=properties['name'], description=properties['description'])
             record = result.single()
             return record["node_id"] if record else None
 
@@ -166,7 +167,7 @@ class Neo4jDBManager:
         query = (
             "MATCH (a), (b) "
             "WHERE elementId(a) = $start_node_id AND elementId(b) = $end_node_id "
-            f"CREATE (a)-[r:`{rel_type}`]->(b) "
+            f"MERGE (a)-[r:`{rel_type}`]->(b) "
             "SET r += $properties "
             "RETURN type(r) AS rel_type"
         )

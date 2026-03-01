@@ -38,6 +38,7 @@ class EdgePayload():
 @dataclass
 class NodePayload():
     # node's payload present in the vector DB 
+    _id: str    # the IDs of GraphDB are not saved properly as IDs in vectorDB, so I add this field
     type: str = "node"
 
     def as_dict(self):
@@ -45,7 +46,7 @@ class NodePayload():
 
 @dataclass
 class GraphNode():
-    # node's payload present in the vector DB 
+    # used to upload a node in the graph
     properties: dict[str, Any]
     label: str = "Entity"
 
