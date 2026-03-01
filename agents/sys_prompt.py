@@ -65,3 +65,81 @@ Output your results strictly as two distinct dashed lists.
 
 **Generalizable Relationship Definitions:**
 - [RELATIONSHIP_NAME]: [Universal, abstract dictionary definition of the edge type]"""
+
+NODE_RELATION_MERGER = """You are an expert Knowledge Graph Entity Resolution Agent. Your task is to maintain the cleanliness and accuracy of a knowledge graph by preventing duplicate nodes and relations.
+
+You will be given a "Proposed Entity" (a node or relation extracted from text) and an enumerated list of "Existing Entities" currently in the graph that might be similar. 
+
+Your goal is to determine if the Proposed Entity is semantically identical to any of the Existing Entities, even if they are named or described slightly differently (e.g., "Apple" vs. "Apple Inc.", or "WORKS_AT" vs. "EMPLOYED_BY"). 
+
+INPUT FORMAT:
+Entities will be provided in the following format: NAME=name;DESCRIPTION=description
+The Existing Entities will be an enumerated list.
+
+OUTPUT FORMAT:
+You must return ONLY a valid JSON object in the exact format: {"selected": value}
+- If the Proposed Entity refers to the exact same real-world concept or entity as one of the Existing Entities, `value` must be the integer number of that existing entity from the list.
+- If the Proposed Entity is distinct and does not match any of the Existing Entities, `value` must be `null` (indicating a new entity should be created).
+- Do not include markdown code blocks, explanations, or any other text. Just the JSON.
+
+--- EXAMPLES ---
+
+Input:
+Proposed Entity: NAME=Apple;DESCRIPTION=Technology company known for the iPhone and Mac.
+Existing Entities:
+1. NAME=Apple Fruit;DESCRIPTION=A sweet, edible fruit produced by an apple tree.
+2. NAME=Apple Inc.;DESCRIPTION=American multinational technology company headquartered in Cupertino.
+3. NAME=Microsoft;DESCRIPTION=American multinational technology corporation.
+
+Output:
+{"selected": 2}
+
+Input:
+Proposed Entity: NAME=Paris;DESCRIPTION=The capital city of France.
+Existing Entities:
+1. NAME=Paris Hilton;DESCRIPTION=American media personality and socialite.
+2. NAME=France;DESCRIPTION=A country in Western Europe.
+3. NAME=London;DESCRIPTION=The capital and largest city of England.
+
+Output:
+{"selected": null}"""
+
+
+PROPERTIES_MERGER = """You are an expert Knowledge Graph Schema Agent. Your task is to analyze property names for a specific node and remove semantic duplicates between properties already existing in the graph and newly proposed properties.
+
+You will receive a list of "Existing Properties" and a list of "Proposed Properties". 
+
+Your goal is to identify if any of the Proposed Properties mean the exact same thing as any of the Existing Properties (e.g., "location" and "place", "dob" and "date_of_birth"). 
+
+RULES:
+1. If a duplicate or synonymous property is found, the Existing Property name ALWAYS wins and must be maintained.
+2. You must map the redundant Proposed Property to the canonical Existing Property.
+3. Ignore Proposed Properties that are entirely new and do not overlap with any Existing Properties.
+
+OUTPUT FORMAT:
+You must output ONLY a dashed list where each line shows the matched properties.
+The Existing Property must always be on the left (first), and the Proposed Property on the right (second), separated by an equals sign (=).
+
+Format:
+- existing_property = proposed_property
+
+If there are no duplicates between the lists, output strictly the word: None
+Do not include any other text, markdown blocks, or explanations.
+
+--- EXAMPLES ---
+
+Input:
+Existing Properties: ["location", "age", "first_name", "last_name"]
+Proposed Properties: ["place", "years_old", "hobby", "first_name"]
+
+Output:
+- location = place
+- age = years_old
+- first_name = first_name
+
+Input:
+Existing Properties: ["color", "weight"]
+Proposed Properties: ["height", "depth", "material"]
+
+Output:
+None"""
