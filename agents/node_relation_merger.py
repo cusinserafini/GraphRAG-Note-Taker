@@ -21,7 +21,7 @@ class NodeRelationMerger(Agent):
         for i, item in enumerate(data_list):
             numbered_list += f"{i+1}. NAME={item['name']};DESCRIPTION={item['description']}\n"
 
-        output = self.execute_basic_call(f"Proposed Entity: NAME={proposal['name']};DESCRIPTION={proposal['description']}\nExisting Entities:\n{numbered_list}\nJust return the json")
+        output = self.execute_basic_call(f"Proposed Entity: NAME={proposal['name']};DESCRIPTION={proposal['description']}\nExisting Entities:\n{numbered_list}\n\nYou are not obliged to select the existing ones, you can keep the proposal. Just think if they relate or not. you can Just return the json")
         selection = self.parse_entity_resolution_output(output)
         return selection
 

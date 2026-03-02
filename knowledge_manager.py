@@ -1,3 +1,4 @@
+from utils import chunk_markdown_files
 # import os
 import numpy as np
 from agents import Chat
@@ -73,7 +74,7 @@ class KnowledgeManager():
             self.graph_db.create_relationship(
                 start_node_id=start_node_id,
                 end_node_id=end_node_id,
-                rel_type=edge['relationship'].upper(),
+                rel_type=edge['relationship'],
                 properties=edge['parameters']
             )
 
@@ -126,7 +127,7 @@ class KnowledgeManager():
         similar_nodes = []
         for nodes_list in nodes_query:
             nodes_id = [node.payload['_id'] for node in nodes_list.points]
-            _nodes = [self.graph_db.get_node(_id) for _id in nodes_id]
+            _nodes = [{"_id": _id, **self.graph_db.get_node(_id)} for _id in nodes_id]
             similar_nodes.append(_nodes)
                 
         similar_relations:list[list[EdgePayload]] = []
@@ -147,10 +148,13 @@ class KnowledgeManager():
                 # updating the node's name and description
                 nodes_to_upload_idx.remove(i)   # removing the node from the updating list of the vector DB
                 selected_node_idx -= 1  # the LLM returns indexes that starts from 1
+                selected_node_id = similar_nodes[i][selected_node_idx]['_id']
                 selected_node_name = similar_nodes[i][selected_node_idx]['name']
                 selected_node_description = similar_nodes[i][selected_node_idx]['description']
                 graph_info['nodes'][selected_node_name] = graph_info['nodes'][node_name]
+                graph_info['nodes'][selected_node_name]['_id'] = selected_node_id
                 graph_info['nodes'][selected_node_name]['description'] = selected_node_description
+                print(f"\tSubstituting {node_name} -> {selected_node_name}")
                 if selected_node_name != node_name:
                     # if the proposed name is different from the one in the graph, let's remove the old one
                     del graph_info['nodes'][node_name]
@@ -188,44 +192,122 @@ class KnowledgeManager():
                 relations_to_upload_idx.remove(i)   # removing the relation from the updating list of the vector DB
                 selected_relation_idx -= 1  # the LLM returns indexes that starts from 1
                 selected_relation_name = similar_relations[i][selected_relation_idx]['name']
+                print(f"\tSubstituting {relation_name} -> {selected_relation_name}")
+                
+                # let's update the edges having relation_name
                 for edge in graph_info['edges']:
-                    edge['relationship'] = selected_relation_name if relation_name == edge['relationship'] else edge['relationship']
+                    if relation_name == edge['relationship']:
+                        edge['relationship'] = selected_relation_name  
 
+                        # merging proposed properties with the existing ones (if they exist)
+                        subject_name = edge['subject']
+                        object_name = edge['object']
+
+                        subject_id = None
+                        if '_id' in graph_info['nodes'][subject_name].keys():
+                            subject_id = graph_info['nodes'][subject_name]['_id']
+                            
+                        object_id = None
+                        if '_id' in graph_info['nodes'][object_name].keys():
+                            object_id = graph_info['nodes'][object_name]['_id']
+
+                        # if both the nodes are present in the graph merge  the properties    
+                        if subject_id is not None and object_id is not None:
+                            existing_properties = self.graph_db.get_relationship_properties(subject_id, object_id, edge['relationship'])
+                            
+                            # if there are parameters loaded in the graph and new proposals parameters, let's merge them if needed
+                            if existing_properties is not None and len(list(edge['parameters'].keys())) != 0:
+                                equal_properties = self.properties_merger(proposals=list(edge['parameters'].keys()), existing=list(existing_properties.keys()))
+                                for proposed, existing in zip(equal_properties.keys(), equal_properties.values()):
+                                    edge['parameters'][existing] = edge['parameters'][proposed]
+                                    if proposed != existing:
+                                        # deleting the old property
+                                        del edge['parameters'][proposed]
+                                edge['parameters'] = {**existing_properties, **edge['parameters']}  # the order is important, in this way we override the existing values with the new ones
+                
         return relations_to_upload_idx, graph_info
 
-    def upload(self, text_chunk:str):
-        # TODO: remeber to remove the examples
+    def upload(self, file_name:str):        
+        chunks_list = chunk_markdown_files([file_name])
         
-        print("> Extracting informations")
-        chunk_info = self.data_extractor(text=text_chunk)
+        currently_used_entities = []
+        currently_used_relations = []
+        graph_info = GraphInfo(nodes={}, edges=[])
+        for i, chunk in enumerate(chunks_list):
+            print(f"> Chunk {i+1}/{len(chunks_list)}")
+            text_chunk = chunk.text
+            print("\t> Extracting informations")
+            chunk_info = self.data_extractor(text=text_chunk, current_entities=currently_used_entities, current_relations=currently_used_relations)
 
-        print("> Getting descriptions")
-        info_example = {'nodes': {'Captain Sarah Jenkins': {'Known For': 'Boisterous laugh, love of vintage jazz', 'Birthplace': 'Nova Scotia', 'Birth Year': 'Unknown'}, 'Oceanus': {'Expedition': 'Mariana Trench Expedition'}, 'Mariana Trench Expedition': {}, 'Luxteuthis': {'Species': 'Bioluminescent squid'}, 'Global Oceanic Institute': {}, 'Dr. Hiroshi Tanaka': {'Occupation': 'Lead Marine Biologist'}}, 'edges': [{'subject': 'Captain Sarah Jenkins', 'relationship': 'Commanded', 'object': 'Oceanus', 'parameters': {'year': '2021'}}, {'subject': 'Oceanus', 'relationship': 'Embarked', 'object': 'Mariana Trench Expedition', 'parameters': {'year': '2023'}}, {'subject': 'Global Oceanic Institute', 'relationship': 'Funded', 'object': 'Mariana Trench Expedition', 'parameters': {'amount': '$1.2 million'}}, {'subject': 'Captain Sarah Jenkins', 'relationship': 'Co-authored', 'object': 'Dr. Hiroshi Tanaka', 'parameters': {'year': '2024'}}]}
-        chunk_info = self.descriptor(text=text_chunk, graph_info=chunk_info)
-        
+            # merging current entities with new entities
+            # TODO: can be improved
+            entities = list(chunk_info['nodes'].keys())
+            for entity_name in entities:
+                if entity_name in graph_info['nodes'].keys():
+                    graph_info['nodes'][entity_name] = {**graph_info['nodes'][entity_name], **chunk_info['nodes'][entity_name]}
+                    del chunk_info['nodes'][entity_name]
+                else:
+                    graph_info['nodes'][entity_name] = chunk_info['nodes'][entity_name]
+            
+            # merging current edges with new edges
+            _chunk_info_edges = [] + chunk_info['edges']
+            _graph_info_edges = [] + graph_info['edges']
+            for edge in _chunk_info_edges:
+                for current_edge in _graph_info_edges:
+                    
+                    if edge['subject'] == current_edge['subject'] and edge['relationship'] == current_edge['relationship'] and edge['object'] == current_edge['object']:
+                        current_edge['parameters'] = {**current_edge['parameters'], **edge['parameters']}
+                        chunk_info['edges'].remove(edge)
+                    else:
+                        graph_info['edges'].append(edge)
+
+                    if edge['relationship'] == current_edge['relationship']:
+                        chunk_info['edges'].remove(edge)
+
+            if len(graph_info['edges']) == 0:
+                graph_info['edges'] = chunk_info['edges']
+
+            print("\t> Getting descriptions")
+            chunk_info = self.descriptor(text=text_chunk, graph_info=chunk_info)
+
+            # TODO: can be improved
+            # merging current entities with new entities
+            for entity_name in chunk_info['nodes'].keys():
+                if entity_name in graph_info['nodes'].keys():
+                    graph_info['nodes'][entity_name] = {**graph_info['nodes'][entity_name], **chunk_info['nodes'][entity_name]}
+                else:
+                    graph_info['nodes'][entity_name] = chunk_info['nodes'][entity_name]
+                    currently_used_entities.append({'name': entity_name, 'description': chunk_info['nodes'][entity_name]['description']})
+
+            # updating currently found entities and relations
+            for entity in chunk_info['nodes']:
+                currently_used_entities.append({'name': entity_name, 'description': chunk_info['nodes'][entity_name]['description']})
+            for edge in chunk_info['edges']:   
+                currently_used_relations.append({'name': edge['relationship'], 'description': edge['description']})
+            
         print("> Embeddings generation")
-        info_example = {'nodes': {'Captain Sarah Jenkins': {'Birthplace': 'Nova Scotia', 'Birth Year': '2012', 'description': 'A captain known for her boisterous laugh and love of vintage jazz.'}, 'Oceanus': {'Expedition': 'Mariana Trench Expedition', 'description': 'A research vessel.'}, 'Mariana Trench Expedition': {'description': 'A perilous expedition.'}, 'Luxteuthis': {'Species': 'Bioluminescent Squid', 'description': 'A newly discovered species of bioluminescent squid.'}, 'Global Oceanic Institute': {'description': 'An organization that provided funding.'}, 'Research Paper': {'description': 'A publication of scientific findings.'}, 'Dr. Hiroshi Tanaka': {'description': 'A marine biologist.'}}, 'edges': [{'subject': 'Captain Sarah Jenkins', 'relationship': 'Commanded', 'object': 'Oceanus', 'parameters': {'year': '2021'}, 'description': 'Represents the act of leading or directing a group or entity.'}, {'subject': 'Oceanus', 'relationship': 'Embarked', 'object': 'Mariana Trench Expedition', 'parameters': {'year': '2023'}, 'description': 'Represents the act of beginning a journey or undertaking.'}, {'subject': 'Global Oceanic Institute', 'relationship': 'Funded', 'object': 'Mariana Trench Expedition', 'parameters': {'amount': '$1.2 million'}, 'description': 'Represents the provision of financial resources to support an activity or entity.'}, {'subject': 'Captain Sarah Jenkins', 'relationship': 'Published', 'object': 'Research Paper', 'parameters': {'year': '2024'}, 'description': 'Represents the act of making something available to the public.'}, {'subject': 'Dr. Hiroshi Tanaka', 'relationship': 'Co-authored', 'object': 'Research Paper', 'parameters': {'year': '2024'}, 'description': 'Represents the act of creating a work collaboratively with one or more other individuals.'}]}
-        node_embeddings, relation_embeddings, relation_names = self._create_nodes_relations_embeddings(chunk_info)
+        node_embeddings, relation_embeddings, relation_names = self._create_nodes_relations_embeddings(graph_info)
 
         similar_nodes, similar_relations = self._get_similar_nodes_relations(node_embeddings, relation_embeddings)
 
         print("> Merging nodes name")
-        nodes_to_upload_idx, chunk_info = self._merge_node_names(similar_nodes, node_embeddings, chunk_info)
+        nodes_to_upload_idx, graph_info = self._merge_node_names(similar_nodes, node_embeddings, graph_info)
 
         print("> Merging relations name")
-        relations_to_upload_idx, chunk_info = self._merge_relation_names(similar_relations, relation_embeddings, relation_names, chunk_info)
+        relations_to_upload_idx, graph_info = self._merge_relation_names(similar_relations, relation_embeddings, relation_names, graph_info)
 
         print("> Uploading informations in the graph")
-        nodes_ids = self._load_knowledge_in_graph(graph_info=chunk_info)
+        nodes_ids = self._load_knowledge_in_graph(graph_info=graph_info)
 
         print("> Uploading embeddings into the vector DB")
         self._load_embeddings_into_vector_DB(
-            graph_info=chunk_info,
+            graph_info=graph_info,
             node_embeddings=node_embeddings[nodes_to_upload_idx],
             nodes_ids=list(np.array(nodes_ids)[nodes_to_upload_idx]),   # TODO: improve this part
             relation_embeddings=relation_embeddings[relations_to_upload_idx],
             relation_names=relation_names
         )
+
 
     def delete(self):
         # TODO: to implement
