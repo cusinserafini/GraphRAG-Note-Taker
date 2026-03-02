@@ -21,7 +21,8 @@ class KnowledgeManager():
         self.collection_name = collection_name
         self.vector_db = QdrantDBManager(location=":localhost:")
         self.vector_db.create_collection('test', 768)
-        self.graph_db = Neo4jDBManager(uri=os.getenv("NEO4J_URI"), user=os.getenv("NEO4J_USERNAME"), password=os.getenv("NEO4J_PASSWORD"))
+        self.graph_db = Neo4jDBManager()
+        # self.graph_db = Neo4jDBManager(uri=os.getenv("NEO4J_URI"), user=os.getenv("NEO4J_USERNAME"), password=os.getenv("NEO4J_PASSWORD"))
         # agents
         self.data_extractor = DataExtractor(chat=self.chat)
         self.descriptor = Descriptor(chat=self.chat)

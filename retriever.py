@@ -8,7 +8,7 @@ class Retriever:
         self.vector_db = vector_db
         self.embedder = embedder
         self.collection_name = collection_name
-
+    
     def retrieve_seeds(self, query: str, top_k: int = 5):
         query_embedding = self.embedder.embed_text([query])[0]
 
@@ -22,26 +22,13 @@ class Retriever:
         if not results or not results[0]:
             return []
 
-        # Extract matched node IDs
+        seeds_id = []
         for response in results:
-            seed_list = response.points
-            seeds_id = [seed.id for seed in seed_list]
+            for point in response.points:
+                if point.payload and "_id" in point.payload:
+                    seeds_id.append(point.payload["_id"])
+
         return seeds_id
-    
-    # def format_subgraph(self, nodes, relationships):
-    #     triples = []
-
-    #     for r in relationships:
-    #         start = r.start_node["name"]
-    #         end = r.end_node["name"]
-    #         rel_type = r.type
-    #         props = dict(r)
-
-    #         triples.append(
-    #             f"{start} -[{rel_type} {props}]-> {end}"
-    #         )
-
-    #     return "\n".join(triples)
     
     def format_subgraph(self, nodes, relationships):
         context_parts = []
@@ -96,3 +83,4 @@ class Retriever:
         )
 
         return context
+    
