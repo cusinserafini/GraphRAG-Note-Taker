@@ -1,7 +1,7 @@
-import os
+# import os
 import numpy as np
 from agents import Chat
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 from neo4j_db import Neo4jDBManager
 from qdrant_db import QdrantDBManager
 from embedder import Embedder
@@ -9,7 +9,7 @@ from agents.properties_merger import PropertiesMerger
 from agents.node_relation_merger import NodeRelationMerger
 from agents import GraphInfo, DataExtractor, Descriptor, EdgePayload, NodePayload, GraphNode
 
-load_dotenv()
+# load_dotenv()
 
 class KnowledgeManager():
     """
