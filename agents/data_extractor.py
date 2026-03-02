@@ -73,7 +73,13 @@ class DataExtractor(Agent):
                         for param_pair in param_str.split(','):
                             if '=' in param_pair:
                                 k, v = param_pair.split('=', 1)
-                                parameters[k.strip()] = v.strip()
+                                val = v.strip()
+                                clean_val = val.strip('\'"')
+                                try:
+                                    val = float(clean_val) if '.' in clean_val else int(clean_val)
+                                except ValueError:
+                                    pass
+                                parameters[k.strip()] = val
                     else:
                         relationship_name = relationship_name.strip()
                     
@@ -107,6 +113,12 @@ class DataExtractor(Agent):
                         graph_data["nodes"][entity_name] = {}
                     
                     # Assign the attribute
-                    graph_data["nodes"][entity_name][attr_name.strip()] = attr_val.strip()
+                    val = attr_val.strip()
+                    clean_val = val.strip('\'"')
+                    try:
+                        val = float(clean_val) if '.' in clean_val else int(clean_val)
+                    except ValueError:
+                        pass
+                    graph_data["nodes"][entity_name][attr_name.strip()] = val
 
         return graph_data
