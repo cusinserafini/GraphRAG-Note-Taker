@@ -1,16 +1,12 @@
 from utils import chunk_markdown_files
-# import os
 import numpy as np
 from agents import Chat
-# from dotenv import load_dotenv
 from neo4j_db import Neo4jDBManager
 from qdrant_db import QdrantDBManager
 from embedder import Embedder
 from agents.properties_merger import PropertiesMerger
 from agents.node_relation_merger import NodeRelationMerger
 from agents import GraphInfo, DataExtractor, Descriptor, EdgePayload, NodePayload, GraphNode
-
-# load_dotenv()
 
 class KnowledgeManager():
     """
@@ -23,7 +19,6 @@ class KnowledgeManager():
         self.vector_db = QdrantDBManager(location=":localhost:")
         self.vector_db.create_collection('test', 768)
         self.graph_db = Neo4jDBManager()
-        # self.graph_db = Neo4jDBManager(uri=os.getenv("NEO4J_URI"), user=os.getenv("NEO4J_USERNAME"), password=os.getenv("NEO4J_PASSWORD"))
         # agents
         self.data_extractor = DataExtractor(chat=self.chat)
         self.descriptor = Descriptor(chat=self.chat)
@@ -307,7 +302,6 @@ class KnowledgeManager():
             relation_embeddings=relation_embeddings[relations_to_upload_idx],
             relation_names=relation_names
         )
-
 
     def delete(self):
         # TODO: to implement
