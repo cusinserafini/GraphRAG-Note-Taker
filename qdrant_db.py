@@ -48,33 +48,14 @@ class QdrantDBManager:
             return True
         return False
 
-    # def insert_points(self, collection_name: str, points: np.ndarray, payloads:list[dict], ids:list=False) -> UpdateResult:
-    #     """
-    #     Create/Update (Upsert) points into a collection in Qdrant.
-    #     """
-    #     # TODO: ci serve mantenere gli ids se non li utilizziamo?
-    #     return self.client.upload_collection(
-    #         collection_name=collection_name,
-    #         vectors=points,
-    #         payload=payloads,
-    #         # ids=ids
-    #     )
-    
-    def insert_points(self, collection_name: str, points: np.ndarray, payloads:list[dict], ids:list[str]) -> UpdateResult:
+    def insert_points(self, collection_name: str, points: np.ndarray, payloads:list[dict]) -> UpdateResult:
         """
         Create/Update (Upsert) points into a collection in Qdrant.
         """
-        point_structs = [
-            PointStruct(
-                id=point_id,
-                vector=vector.tolist(),
-                payload=payload
-            ) for point_id, vector, payload in zip(ids, points, payloads)
-        ]
-
-        return self.client.upsert(
+        return self.client.upload_collection(
             collection_name=collection_name,
-            points=point_structs
+            vectors=points,
+            payload=payloads,
         )
 
     def retrieve_points(self, collection_name: str, point_ids: List[Union[int, str]]) -> List[Any]:

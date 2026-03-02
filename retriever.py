@@ -28,20 +28,56 @@ class Retriever:
             seeds_id = [seed.id for seed in seed_list]
         return seeds_id
     
-    def format_subgraph(self, nodes, relationships):
-        triples = []
+    # def format_subgraph(self, nodes, relationships):
+    #     triples = []
 
+    #     for r in relationships:
+    #         start = r.start_node["name"]
+    #         end = r.end_node["name"]
+    #         rel_type = r.type
+    #         props = dict(r)
+
+    #         triples.append(
+    #             f"{start} -[{rel_type} {props}]-> {end}"
+    #         )
+
+    #     return "\n".join(triples)
+    
+    def format_subgraph(self, nodes, relationships):
+        context_parts = []
+
+        # ---- Add node descriptions ----
+        for node in nodes:
+            props = dict(node)
+            name = props.get("name", "Unknown")
+            description = props.get("description", "")
+
+            node_text = f"Entity: {name}"
+            if description:
+                node_text += f"\nDescription: {description}"
+
+            # Include other properties if needed
+            other_props = {
+                k: v for k, v in props.items()
+                if k not in ["name", "description", "uid"]
+            }
+            if other_props:
+                node_text += f"\nAttributes: {other_props}"
+
+            context_parts.append(node_text)
+
+        # ---- Add relationships ----
         for r in relationships:
             start = r.start_node["name"]
             end = r.end_node["name"]
             rel_type = r.type
             props = dict(r)
 
-            triples.append(
-                f"{start} -[{rel_type} {props}]-> {end}"
+            context_parts.append(
+                f"Relationship: {start} -[{rel_type} {props}]-> {end}"
             )
 
-        return "\n".join(triples)
+        return "\n\n".join(context_parts)
     
     def retrieve(self, query: str, depth: int = 1):
         seed_ids = self.retrieve_seeds(query)

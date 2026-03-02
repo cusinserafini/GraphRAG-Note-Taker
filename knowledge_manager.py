@@ -2,7 +2,6 @@ import os
 import numpy as np
 from agents import Chat
 from dotenv import load_dotenv
-import uuid
 from neo4j_db import Neo4jDBManager
 from qdrant_db import QdrantDBManager
 from embedder import Embedder
@@ -22,8 +21,7 @@ class KnowledgeManager():
         self.collection_name = collection_name
         self.vector_db = QdrantDBManager(location=":localhost:")
         self.vector_db.create_collection('test', 768)
-        self.graph_db = Neo4jDBManager()
-        # self.graph_db = Neo4jDBManager(uri=os.getenv("NEO4J_URI"), user=os.getenv("NEO4J_USERNAME"), password=os.getenv("NEO4J_PASSWORD"))
+        self.graph_db = Neo4jDBManager(uri=os.getenv("NEO4J_URI"), user=os.getenv("NEO4J_USERNAME"), password=os.getenv("NEO4J_PASSWORD"))
         # agents
         self.data_extractor = DataExtractor(chat=self.chat)
         self.descriptor = Descriptor(chat=self.chat)
@@ -60,14 +58,10 @@ class KnowledgeManager():
         for node_name in graph_info['nodes'].keys():
             node_properties = graph_info['nodes'][node_name]
             node_properties['name'] = node_name
-            node_uid = str(uuid.uuid4())
-            node_properties['uid'] = node_uid
-            self.graph_db.create_node(**GraphNode(properties=node_properties).as_dict())
-            # node_id = self.graph_db.create_node(**GraphNode(properties=node_properties).as_dict())
-            nodes_ids.append(node_uid)
-            # nodes_ids.append(node_id)
-            graph_info['nodes'][node_name]['_id'] = node_uid
-            # graph_info['nodes'][node_name]['_id'] = node_id
+            node_id = self.graph_db.create_node(**GraphNode(properties=node_properties).as_dict())
+            nodes_ids.append(node_id)
+            graph_info['nodes'][node_name]['_id'] = node_id
+
 
         # loading relationships
         for edge in graph_info['edges']:
@@ -88,7 +82,7 @@ class KnowledgeManager():
         self, 
         graph_info:GraphInfo, 
         node_embeddings:np.ndarray,
-        nodes_ids:list, 
+        nodes_ids:list,
         relation_embeddings:np.array,
         relation_names:list[str]
     ):
@@ -99,12 +93,9 @@ class KnowledgeManager():
 
         # creating relations payloads
         relations_payloads = []
-        relations_ids = []
         for rel_name in relation_names:
             for relation in graph_info['edges']:
                 if rel_name == relation['relationship']:
-                    relation_id = self.vector_db.generate_unique_id(self.collection_name)
-                    relations_ids.append(relation_id)
                     relations_payloads.append(
                         EdgePayload(
                             name=rel_name,
@@ -114,10 +105,8 @@ class KnowledgeManager():
 
         self.vector_db.insert_points(
             collection_name=self.collection_name,
-            # points=np.concat([node_embeddings, relation_embeddings]),
-            points=np.concatenate([node_embeddings, relation_embeddings], axis=0),
-            payloads=nodes_payloads + relations_payloads,
-            ids=nodes_ids + relations_ids
+            points=np.concat([node_embeddings, relation_embeddings]),
+            payloads=nodes_payloads + relations_payloads
         )
     
     def _get_similar_nodes_relations(self, node_embeddings:np.ndarray, relation_embeddings:np.ndarray):
@@ -134,19 +123,14 @@ class KnowledgeManager():
         )
         
         similar_nodes = []
-        for response in nodes_query:
-            nodes_list = response.points
-            nodes_id = [node.id for node in nodes_list]
-            # nodes_id = [node.payload['_id'] for node in nodes_list.points]
+        for nodes_list in nodes_query:
+            nodes_id = [node.payload['_id'] for node in nodes_list.points]
             _nodes = [self.graph_db.get_node(_id) for _id in nodes_id]
             similar_nodes.append(_nodes)
                 
-        similar_relations = []
-        # similar_relations:list[list[EdgePayload]] = []
-        for response in relations_query:
-            relations_list = response.points
-            _relations = [EdgePayload(**relation.payload).as_dict() for relation in relations_list]
-            # _relations = [EdgePayload(**relation.payload).as_dict() for relation in relations_list.points]
+        similar_relations:list[list[EdgePayload]] = []
+        for relations_list in relations_query:
+            _relations = [EdgePayload(**relation.payload).as_dict() for relation in relations_list.points]
             similar_relations.append(_relations)
 
         return similar_nodes, similar_relations
