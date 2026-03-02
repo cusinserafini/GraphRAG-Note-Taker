@@ -2,6 +2,7 @@ from .sys_prompt import NODE_RELATION_MERGER
 from .chat import Chat
 from .agent import Agent
 import json
+import re
 
 class NodeRelationMerger(Agent):
     def __init__(self, chat:Chat):
@@ -20,45 +21,77 @@ class NodeRelationMerger(Agent):
         for i, item in enumerate(data_list):
             numbered_list += f"{i+1}. NAME={item['name']};DESCRIPTION={item['description']}\n"
 
-        output = self.execute_basic_call(f"Proposed Entity: NAME={proposal['name']};DESCRIPTION={proposal['description']}\nExisting Entities:\n{numbered_list}\nJust return the json")
+        output = self.execute_basic_call(f"Proposed Entity: NAME={proposal['name']};DESCRIPTION={proposal['description']}\nExisting Entities:\n{numbered_list}\n\nYou are not obliged to select the existing ones, you can keep the proposal. Just think if they relate or not. you can Just return the json")
         selection = self.parse_entity_resolution_output(output)
         return selection
 
+    # def parse_entity_resolution_output(self, llm_response: str):
+    #     """
+    #     Parses the JSON output from the entity resolution agent.
+        
+    #     Args:
+    #         llm_response (str): The raw text output from the LLM.
+            
+    #     Returns:
+    #         int or None: The selected entity index, or None if a new entity must be created.
+    #                     Returns None on failure (or you could choose to raise an exception).
+    #     """
+    #     # 1. Clean the response (strip whitespace and potential markdown backticks)
+    #     cleaned_response = llm_response.strip()
+        
+    #     if cleaned_response.startswith("```json"):
+    #         cleaned_response = cleaned_response[7:]
+    #     elif cleaned_response.startswith("```"):
+    #         cleaned_response = cleaned_response[3:]
+            
+    #     if cleaned_response.endswith("```"):
+    #         cleaned_response = cleaned_response[:-3]
+            
+    #     cleaned_response = cleaned_response.strip()
+
+    #     # 2. Parse the JSON and extract the value
+    #     try:
+    #         data = json.loads(cleaned_response)
+            
+    #         if "selected" in data:
+    #             # Will be an integer or None (since JSON 'null' parses to Python 'None')
+    #             return data["selected"] 
+    #         else:
+    #             print(f"Error: The key 'selected' was not found in the output: {data}")
+    #             return None
+                
+    #     except json.JSONDecodeError as e:
+    #         print(f"Error: Failed to decode JSON. Raw output: '{llm_response}'. Details: {e}")
+    #         return None
+
     def parse_entity_resolution_output(self, llm_response: str):
         """
-        Parses the JSON output from the entity resolution agent.
-        
-        Args:
-            llm_response (str): The raw text output from the LLM.
-            
+        Robust parser for LLM responses that contain reasoning plus JSON.
         Returns:
-            int or None: The selected entity index, or None if a new entity must be created.
-                        Returns None on failure (or you could choose to raise an exception).
+            int or None: the selected entity index, or None if a new entity.
         """
-        # 1. Clean the response (strip whitespace and potential markdown backticks)
-        cleaned_response = llm_response.strip()
+        # 1. Clean markdown backticks
+        cleaned = llm_response.strip()
+        cleaned = re.sub(r'^```(?:json)?', '', cleaned)
+        cleaned = re.sub(r'```$', '', cleaned)
         
-        if cleaned_response.startswith("```json"):
-            cleaned_response = cleaned_response[7:]
-        elif cleaned_response.startswith("```"):
-            cleaned_response = cleaned_response[3:]
-            
-        if cleaned_response.endswith("```"):
-            cleaned_response = cleaned_response[:-3]
-            
-        cleaned_response = cleaned_response.strip()
+        # 2. Find all JSON objects in the text
+        json_matches = re.findall(r'\{.*?\}', cleaned, re.DOTALL)
+        if not json_matches:
+            print(f"Warning: No JSON found in LLM output:\n{llm_response}")
+            return None
+        
+        # 3. Take the **last JSON object** (usually the one the LLM intends as output)
+        last_json_str = json_matches[-1]
 
-        # 2. Parse the JSON and extract the value
+        # 4. Parse safely
         try:
-            data = json.loads(cleaned_response)
-            
+            data = json.loads(last_json_str)
             if "selected" in data:
-                # Will be an integer or None (since JSON 'null' parses to Python 'None')
-                return data["selected"] 
+                return data["selected"]
             else:
-                print(f"Error: The key 'selected' was not found in the output: {data}")
+                print(f"Warning: 'selected' key not found in JSON: {data}")
                 return None
-                
         except json.JSONDecodeError as e:
-            print(f"Error: Failed to decode JSON. Raw output: '{llm_response}'. Details: {e}")
+            print(f"Error: Failed to decode JSON. Raw extracted JSON: '{last_json_str}'. Details: {e}")
             return None

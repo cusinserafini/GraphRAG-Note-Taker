@@ -12,7 +12,7 @@ class DataExtractor(Agent):
             system_prompt=DATA_EXTRACTOR
         )
 
-    def __call__(self, text:str):
+    def __call__(self, text:str, current_entities:list[dict], current_relations:list[dict]):
         """
         Extracts entities, properties and relationships from a text chunk
         """
@@ -21,7 +21,7 @@ class DataExtractor(Agent):
         # TODO: llama.cpp gives the possibility to enforce the generation of a JSON output: investigate
 
         # extracting informations
-        output = self.execute_basic_call(f"**Input Text:** {text}")
+        output = self.execute_basic_call(f"**Input:**\nExisting Entities: {current_entities}\nExisting Relations: {current_relations}\nText: {text}\n\nBe far-sighted: the distinction between propertie and node is important.")
         graph_data = self.parse_property_graph(output)
         return graph_data
 
@@ -53,8 +53,8 @@ class DataExtractor(Agent):
                 parts = [p.strip() for p in content.split("->")]
                 
                 if len(parts) >= 3:
-                    subject_entity = parts[0]
-                    object_entity = parts[-1]
+                    subject_entity = parts[0].lower()
+                    object_entity = parts[-1].lower()
                     
                     # Rejoin just in case the relationship name itself somehow had an arrow
                     rel_with_params = "->".join(parts[1:-1])
@@ -86,7 +86,7 @@ class DataExtractor(Agent):
                     # Add to edges list
                     graph_data["edges"].append({
                         "subject": subject_entity,
-                        "relationship": relationship_name,
+                        "relationship": relationship_name.lower(),
                         "object": object_entity,
                         "parameters": parameters
                     })
@@ -102,7 +102,7 @@ class DataExtractor(Agent):
             elif ":" in content and "=" in content:
                 # Split only on the first colon to separate entity from the attribute definition
                 entity_part, attr_part = content.split(":", 1)
-                entity_name = entity_part.strip()
+                entity_name = entity_part.strip().lower()
                 
                 # Split only on the first equals sign to separate key and value
                 if "=" in attr_part:

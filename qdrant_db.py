@@ -108,3 +108,36 @@ class QdrantDBManager:
             collection_name=collection_name,
             points_selector=point_ids
         )
+
+    def get_relationship_properties(self, collection_name: str, start_node_id: Union[int, str], end_node_id: Union[int, str], rel_name: str) -> Union[Dict[str, Any], None]:
+        """
+        Retrieve the properties of a specific relationship given two nodes ID and the rel name.
+        Uses Scroll API to find the point matching the metadata constraints.
+        """
+        query_filter = Filter(
+            must=[
+                FieldCondition(
+                    key="start_node_id",
+                    match=MatchValue(value=start_node_id)
+                ),
+                FieldCondition(
+                    key="end_node_id",
+                    match=MatchValue(value=end_node_id)
+                ),
+                FieldCondition(
+                    key="name",
+                    match=MatchValue(value=rel_name)
+                )
+            ]
+        )
+
+        results, _ = self.client.scroll(
+            collection_name=collection_name,
+            scroll_filter=query_filter,
+            with_payload=True,
+            limit=1
+        )
+
+        if results and len(results) > 0:
+            return results[0].payload
+        return None

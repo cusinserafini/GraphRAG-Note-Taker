@@ -15,7 +15,7 @@ class PropertiesMerger(Agent):
         Merges together the properties that have the same meaning.
         """
         # extracting informations
-        output = self.execute_basic_call(f"Existing Properties: {existing}\nProposed Properties: {proposals}")
+        output = self.execute_basic_call(f"Input:\nExisting Properties: {existing}\nProposed Properties: {proposals}\n\Work on this input.")
         equal_properties = self.parse_property_deduplication(output)
         return equal_properties
 

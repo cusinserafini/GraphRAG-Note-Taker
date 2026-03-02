@@ -164,6 +164,7 @@ class Neo4jDBManager:
             bool: True if the relationship was successfully created.
         """
         properties = properties or {}
+        rel_type = rel_type.upper()
         query = (
             "MATCH (a), (b) "
             "WHERE elementId(a) = $start_node_id AND elementId(b) = $end_node_id "
@@ -178,6 +179,34 @@ class Neo4jDBManager:
 
         with self.driver.session() as session:
             return session.execute_write(_execute_rel_create)
+            
+    def get_relationship_properties(self, start_node_id: int, end_node_id: int, rel_type: str) -> Optional[Dict[str, Any]]:
+        """
+        Retrieve the properties of a specific relationship given two nodes ID and the rel name.
+        
+        Args:
+            start_node_id (int): Internal ID of the starting node.
+            end_node_id (int): Internal ID of the ending node.
+            rel_type (str): The type of the relationship.
+
+        Returns:
+            Optional[Dict[str, Any]]: The relationship properties if found, else None.
+        """
+        rel_type = rel_type.upper()
+        query = (
+            "MATCH (a)-[r:`" + rel_type + "`]->(b) "
+            "WHERE elementId(a) = $start_node_id AND elementId(b) = $end_node_id "
+            "RETURN properties(r) AS properties"
+        )
+
+        def _execute_get_rel(tx):
+            result = tx.run(query, start_node_id=start_node_id, end_node_id=end_node_id)
+            record = result.single()
+            return record["properties"] if record else None
+
+        with self.driver.session() as session:
+            return session.execute_read(_execute_get_rel)
+
         
     def get_k_hop_subgraph(self, node_element_ids: list[str], depth: int = 1):
         """
