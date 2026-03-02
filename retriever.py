@@ -23,8 +23,10 @@ class Retriever:
             return []
 
         # Extract matched node IDs
-        seed_ids = [res.id for res in results[0]]
-        return seed_ids
+        for response in results:
+            seed_list = response.points
+            seeds_id = [seed.id for seed in seed_list]
+        return seeds_id
     
     def format_subgraph(self, nodes, relationships):
         triples = []

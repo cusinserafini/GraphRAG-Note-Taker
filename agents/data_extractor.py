@@ -25,8 +25,6 @@ class DataExtractor(Agent):
         graph_data = self.parse_property_graph(output)
         return graph_data
 
-
-
     def parse_property_graph(self, llm_output: str) -> Dict[str, Any]:
         """
         Parses LLM output into a structured format for a Property Graph.

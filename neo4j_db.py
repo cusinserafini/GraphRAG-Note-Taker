@@ -178,23 +178,68 @@ class Neo4jDBManager:
 
         with self.driver.session() as session:
             return session.execute_write(_execute_rel_create)
+        
+    def get_k_hop_subgraph(self, node_uids: list[str], depth: int = 1):
+        """
+        Returns the k-hop subgraph around the given list of node UIDs.
 
-    def get_k_hop_subgraph(self, node_ids: list[str], depth: int = 1):
+        Args:
+            node_ids: List of UUID strings identifying nodes in the graph.
+            depth: Number of hops to traverse.
+
+        Returns:
+            dict with "nodes" and "relationships" lists.
+        """
         query = f"""
         MATCH (n)
-        WHERE elementId(n) IN $node_ids
-        CALL apoc.path.subgraphAll(n, {{
-            maxLevel: {depth}
-        }})
-        YIELD nodes, relationships
-        RETURN nodes, relationships
+        WHERE n.uid IN $node_uids
+        MATCH (n)-[*1..{depth}]-(m)
+        WITH collect(DISTINCT n) + collect(DISTINCT m) AS nodes
+        UNWIND nodes AS n1
+        OPTIONAL MATCH (n1)-[r]->(n2)
+        WHERE n2 IN nodes
+        RETURN nodes, collect(DISTINCT r) AS relationships
         """
 
         with self.driver.session() as session:
-            result = session.run(query, node_ids=node_ids)
+            result = session.run(query, node_uids=node_uids)
             record = result.single()
+
+            if record is None:
+                return {"nodes": [], "relationships": []}
+
             return {
                 "nodes": record["nodes"],
                 "relationships": record["relationships"]
             }
+        
+    # def get_k_hop_subgraph(self, node_uids: list[str], depth: int = 1):
+    #     query = f"""
+    #     MATCH (n)
+    #     WHERE n.uid IN $node_ids
+    #     MATCH (n)-[*1..{depth}]-(m)
+    #     WITH collect(DISTINCT n) + collect(DISTINCT m) AS nodes
+    #     UNWIND nodes AS n1
+    #     OPTIONAL MATCH (n1)-[r]->(n2)
+    #     WHERE n2 IN nodes
+    #     RETURN
+    #         [node IN nodes | properties(node) + {{uid: node.uid}}] AS nodes,
+    #         [rel IN collect(DISTINCT r) | {{
+    #             start: rel.startNodeElementId,
+    #             end: rel.endNodeElementId,
+    #             type: type(rel),
+    #             props: properties(rel)
+    #         }}] AS relationships
+    #     """
+
+    #     with self.driver.session() as session:
+    #         result = session.run(query, node_uids=node_uids)
+    #         record = result.single()
+    #         if record is None:
+    #             return {"nodes": [], "relationships": []}
+
+    #         return {
+    #             "nodes": record["nodes"],
+    #             "relationships": record["relationships"]
+    #         }
     

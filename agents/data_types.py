@@ -1,5 +1,4 @@
-from typing import Any
-from mypy_extensions import TypedDict
+from typing import Any, TypedDict
 from dataclasses import dataclass, asdict
 
 class MessageFormat(TypedDict):
