@@ -72,7 +72,7 @@ class KnowledgeManager():
             self.graph_db.create_relationship(
                 start_node_id=start_node_id,
                 end_node_id=end_node_id,
-                rel_type=edge['relationship'].upper(),
+                rel_type=edge['relationship'],
                 properties=edge['parameters']
             )
 
@@ -125,7 +125,7 @@ class KnowledgeManager():
         similar_nodes = []
         for nodes_list in nodes_query:
             nodes_id = [node.payload['_id'] for node in nodes_list.points]
-            _nodes = [self.graph_db.get_node(_id) for _id in nodes_id]
+            _nodes = [{"_id": _id, **self.graph_db.get_node(_id)} for _id in nodes_id]
             similar_nodes.append(_nodes)
                 
         similar_relations:list[list[EdgePayload]] = []
@@ -146,8 +146,10 @@ class KnowledgeManager():
                 # updating the node's name and description
                 nodes_to_upload_idx.remove(i)   # removing the node from the updating list of the vector DB
                 selected_node_idx -= 1  # the LLM returns indexes that starts from 1
+                selected_node_id = similar_nodes[i][selected_node_idx]['_id']
                 selected_node_name = similar_nodes[i][selected_node_idx]['name']
                 selected_node_description = similar_nodes[i][selected_node_idx]['description']
+                graph_info['nodes'][selected_node_name]['_id'] = selected_node_id
                 graph_info['nodes'][selected_node_name] = graph_info['nodes'][node_name]
                 graph_info['nodes'][selected_node_name]['description'] = selected_node_description
                 if selected_node_name != node_name:
@@ -187,13 +189,42 @@ class KnowledgeManager():
                 relations_to_upload_idx.remove(i)   # removing the relation from the updating list of the vector DB
                 selected_relation_idx -= 1  # the LLM returns indexes that starts from 1
                 selected_relation_name = similar_relations[i][selected_relation_idx]['name']
+                
+                # let's update the edges having relation_name
                 for edge in graph_info['edges']:
-                    edge['relationship'] = selected_relation_name if relation_name == edge['relationship'] else edge['relationship']
+                    if relation_name == edge['relationship']:
+                        edge['relationship'] = selected_relation_name  
 
+                        # merging proposed properties with the existing ones (if they exist)
+                        subject_name = edge['subject']
+                        object_name = edge['object']
+
+                        subject_id = None
+                        if '_id' in graph_info['nodes'][subject_name].keys():
+                            subject_id = graph_info['nodes'][subject_name]['_id']
+                            
+                        object_id = None
+                        if '_id' in graph_info['nodes'][object_name].keys():
+                            object_id = graph_info['nodes'][object_name]['_id']
+
+                        # if both the nodes are present in the graph merge  the properties    
+                        if subject_id is not None and object_id is not None:
+                            existing_properties = self.graph_db.get_relationship_properties(subject_id, object_id, edge['relationship'])
+                            
+                            # if there are parameters loaded in the graph and new proposals parameters, let's merge them if needed
+                            if existing_properties is not None and len(list(edge['parameters'].keys())) != 0:
+                                equal_properties = self.properties_merger(proposals=list(edge['parameters'].keys()), existing=list(existing_properties.keys()))
+                                for proposed, existing in zip(equal_properties.keys(), equal_properties.values()):
+                                    edge['parameters'][existing] = edge['parameters'][proposed]
+                                    if proposed != existing:
+                                        # deleting the old property
+                                        del edge['parameters'][proposed]
+                                edge['parameters'] = {**existing_properties, **edge['parameters']}  # the order is important, in this way we override the existing values with the new ones
+                
         return relations_to_upload_idx, graph_info
 
     def upload(self, text_chunk:str):
-        # TODO: remeber to remove the examples
+        # TODO: remeber to remove the examples
         
         print("> Extracting informations")
         chunk_info = self.data_extractor(text=text_chunk)
