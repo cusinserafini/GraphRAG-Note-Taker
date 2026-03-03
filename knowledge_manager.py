@@ -104,7 +104,7 @@ class KnowledgeManager():
         # creating nodes payloads
         nodes_payloads = []
         for node_id, node_name in zip(nodes_ids, graph_info['nodes'].keys()):
-            nodes_payloads.append(NodePayload(_id=node_id).as_dict())
+            nodes_payloads.append(NodePayload(_id=node_id, description=graph_info['nodes'][node_name]['description']).as_dict())
 
         # creating relations payloads
         relations_payloads = []

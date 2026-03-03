@@ -1,3 +1,4 @@
+import re
 from typing import List, Dict, Any, Optional
 from neo4j import GraphDatabase
 
@@ -299,3 +300,42 @@ class Neo4jDBManager:
                 "nodes": record["nodes"],
                 "relationships": record["relationships"]
             }
+
+    def execute_cypher(self, query: str, parameters: dict = None) -> List[Dict[str, Any]]:
+        """
+        Executes a custom Cypher query if it is deemed strictly read-only.
+        
+        Args:
+            query (str): The Cypher query to execute.
+            parameters (dict, optional): Parameters to pass to the query.
+
+        Returns:
+            List[Dict[str, Any]]: A list of dictionaries representing the records returned.
+            
+        Raises:
+            ValueError: If the query contains mutating keywords (e.g. CREATE, DELETE).
+        """
+        parameters = parameters or {}
+        
+        # A basic heuristic safety check to prevent obviously mutating queries.
+        # This converts to uppercase and checks for standalone keywords via word boundaries.
+        forbidden_keywords = [
+            r"\bCREATE\b", r"\bMERGE\b", r"\bSET\b", r"\bDELETE\b", r"\bREMOVE\b", 
+            r"\bDROP\b", r"\bLOAD\b", r"\bCALL\b"
+        ]
+        
+        upper_query = query.upper()
+        for kw in forbidden_keywords:
+            if re.search(kw, upper_query):
+                raise ValueError(f"Forbidden mutating keyword found in query. This function only allows read operations. Found match for: {kw}")
+
+        def _execute_custom_read(tx):
+            result = tx.run(query, **parameters)
+            return [record.data() for record in result]
+            
+        with self.driver.session() as session:
+            # We explicitly enforce the use of execute_read at the driver level to 
+            # prevent routing to follower nodes allowing writes in clustered deployments.
+            return session.execute_read(_execute_custom_read)
+
+        

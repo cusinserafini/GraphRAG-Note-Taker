@@ -1,0 +1,11 @@
+{
+    "ip": "0.0.0.0",
+    "transport": "tcp",
+    "shell_port": 50001,
+    "iopub_port": 50002,
+    "stdin_port": 50003,
+    "control_port": 50004,
+    "hb_port": 50005,
+    "key": "super-secret-key-123",
+    "signature_scheme": "hmac-sha256"
+}

@@ -38,6 +38,7 @@ class EdgePayload():
 class NodePayload():
     # node's payload present in the vector DB 
     _id: str    # the IDs of GraphDB are not saved properly as IDs in vectorDB, so I add this field
+    description: str
     type: str = "node"
 
     def as_dict(self):
