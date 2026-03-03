@@ -1,3 +1,4 @@
+from agents.data_types import ChunkPayload
 from utils import chunk_markdown_files
 import numpy as np
 from agents import Chat
@@ -222,9 +223,7 @@ class KnowledgeManager():
                 
         return relations_to_upload_idx, graph_info
 
-    def upload(self, file_name:str):        
-        chunks_list = chunk_markdown_files([file_name])
-        
+    def _extract_info_from_document(self, chunks_list:list):
         currently_used_entities = []
         currently_used_relations = []
         graph_info = GraphInfo(nodes={}, edges=[])
@@ -279,6 +278,26 @@ class KnowledgeManager():
                 currently_used_entities.append({'name': entity_name, 'description': chunk_info['nodes'][entity_name]['description']})
             for edge in chunk_info['edges']:   
                 currently_used_relations.append({'name': edge['relationship'], 'description': edge['description']})
+        
+        return graph_info
+
+    def _load_chunk_embeddings(self, chunks_list:list):
+        chunk_texts = [chunk.text for chunk in chunks_list]
+        embeddings = self.embedder.embed_text(chunk_texts)
+            
+        self.vector_db.insert_points(
+            collection_name=self.collection_name,
+            points=embeddings,
+            payloads=[ChunkPayload(text=text).as_dict() for text in chunk_texts]
+        )
+        
+
+    def upload(self, file_name:str):
+        chunks_list = chunk_markdown_files([file_name])
+        print("> Loading chunk embeddings")
+        self._load_chunk_embeddings(chunks_list)
+        print("> Extracting graph info")
+        graph_info = self._extract_info_from_document(chunks_list)
             
         print("> Embeddings generation")
         node_embeddings, relation_embeddings, relation_names = self._create_nodes_relations_embeddings(graph_info)
@@ -302,6 +321,10 @@ class KnowledgeManager():
             relation_embeddings=relation_embeddings[relations_to_upload_idx],
             relation_names=relation_names
         )
+
+    def ask_question(self, text:str):
+        # TODO: to implement
+        raise NotImplementedError()
 
     def delete(self):
         # TODO: to implement
