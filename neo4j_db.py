@@ -271,3 +271,31 @@ class Neo4jDBManager:
         with self.driver.session() as session:
             return session.execute_read(_execute)
     
+    def get_k_hop_filtered_subgraph(self, node_element_ids: list[str], allowed_rel_types: list[str], depth: int = 1):
+        query = f"""
+        MATCH (n)
+        WHERE elementId(n) IN $node_element_ids
+        MATCH (n)-[r*1..{depth}]-(m)
+        WHERE ALL(rel IN r WHERE type(rel) IN $allowed_rel_types)
+        WITH collect(DISTINCT n) + collect(DISTINCT m) AS nodes
+        UNWIND nodes AS node
+        WITH collect(DISTINCT node) AS nodes
+        UNWIND nodes AS n1
+        OPTIONAL MATCH (n1)-[r]->(n2)
+        WHERE n2 IN nodes
+        RETURN nodes, collect(DISTINCT r) AS relationships
+        """
+
+        with self.driver.session() as session:
+            result = session.run(
+                query,
+                node_element_ids=node_element_ids,
+                allowed_rel_types=allowed_rel_types
+            )
+            record = result.single()
+            if record is None:
+                return {"nodes": [], "relationships": []}
+            return {
+                "nodes": record["nodes"],
+                "relationships": record["relationships"]
+            }
