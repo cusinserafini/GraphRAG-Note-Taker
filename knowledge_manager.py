@@ -322,6 +322,10 @@ class KnowledgeManager():
             relation_names=relation_names
         )
 
+    def ask_question(self, text:str):
+        # TODO: to implement
+        raise NotImplementedError()
+
     def delete(self):
         # TODO: to implement
         raise NotImplementedError()
