@@ -1,9 +1,13 @@
 import numpy as np
-
+from agents.data_types import ChunkPayload
+from embedder import Embedder
+from qdrant_db import QdrantDBManager
+from neo4j_db import Neo4jDBManager
+import numpy as np
 from agents import NodePayload
 
 class Retriever:
-    def __init__(self, graph_db, vector_db, embedder, collection_name):
+    def __init__(self, graph_db:Neo4jDBManager, vector_db:QdrantDBManager, embedder:Embedder, collection_name:str):
         self.graph_db = graph_db
         self.vector_db = vector_db
         self.embedder = embedder
@@ -83,4 +87,21 @@ class Retriever:
         )
 
         return context
+
+    def rag(self, query:str, n_chunks_limit:int = 5) -> str:
+        """
+        Used to retrieve the chunks of text similar to a query
+        """
+        query_embedding = self.embedder.embed_text(query)
+        query_embedding = np.expand_dims(query_embedding, 0)
+        similar_points = self.vector_db.search_points(
+            collection_name=self.collection_name,
+            query_vector=query_embedding,
+            limit=n_chunks_limit,
+            point_type=ChunkPayload.type
+        )
+
+        return [point.payload['text'] for point in similar_points[0].points]
+
+
     
