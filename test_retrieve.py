@@ -138,20 +138,21 @@ all_queries = (
     level_7_queries
 )
 
-for query in level_7_queries:
-    print("\n==============================")
-    print("QUERY:", query)
+# for query in level_7_queries:
+query = "Which organization did Jony Ive work at and where is it located?"
+print("\n==============================")
+print("QUERY:", query)
 
-    context = retriever.retrieve(query, depth=3, chat=chat)
+context = retriever.retrieve(query, top_k=5, depth=3, chat=chat)
 
-    print("\nRetrieved Context:")
-    print(context)
+print("\nRetrieved Context:")
+print(context)
 
-    messages = [
-        {"role": "system", "content": "Answer using ONLY the provided context. If not present, say 'Not found in context.'"},
-        {"role": "user", "content": f"Context:\n{context}\n\nQuestion: {query}"}
-    ]
+messages = [
+    {"role": "system", "content": "Answer using ONLY the provided context. If not present, say 'Not found in context.'"},
+    {"role": "user", "content": f"Context:\n{context}\n\nQuestion: {query}"}
+]
 
-    answer = chat.ask(messages)
-    print("\nLLM Answer:")
-    print(answer)
+answer = chat.ask(messages)
+print("\nLLM Answer:")
+print(answer)
