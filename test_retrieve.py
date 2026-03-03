@@ -111,7 +111,7 @@ query = "Did Jony Ive work at Apple?"
 print("\n==============================")
 print("QUERY:", query)
 
-context = retriever.retrieve(query, top_k=5, depth=2, agentic=False, chat=None)
+context = retriever.retrieve(query, top_k=5, depth=2, agentic=True, chat=chat)
 
 print("\nRetrieved Context:")
 print(context)
@@ -121,6 +121,8 @@ messages = [
     {"role": "user", "content": f"Context:\n{context}\n\nQuestion: {query}"}
 ]
 
-answer = chat.ask(messages)
+answer = chat.ask(messages, streaming=False)
 print("\nLLM Answer:")
 print(answer)
+# for token in answer:
+#     print(token, end="", flush=True)
