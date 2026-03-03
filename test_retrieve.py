@@ -107,11 +107,11 @@ all_queries = (
     level_7_queries
 )
 
-query = "Did Jony Ive work at Apple?"
+query = "Explain how Alan Turing, ARPANET, CERN, NASA, and the Apollo program collectively shaped modern technological infrastructure."
 print("\n==============================")
 print("QUERY:", query)
 
-context = retriever.retrieve(query, top_k=5, depth=2, agentic=True, chat=chat)
+context = retriever.retrieve(query, top_k=5, depth=1, agentic=False, chat=None)
 
 print("\nRetrieved Context:")
 print(context)

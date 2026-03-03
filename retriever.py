@@ -124,7 +124,7 @@ class Retriever:
             # Include other properties if needed
             other_props = {
                 k: v for k, v in props.items()
-                if k not in ["name", "description"]
+                if k not in ["name", "description", "_id"]
             }
             if other_props:
                 node_text += f"\nAttributes: {other_props}"

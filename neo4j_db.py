@@ -276,7 +276,6 @@ class Neo4jDBManager:
         MATCH (start)
         WHERE elementId(start) IN $node_element_ids
 
-        // Try to expand only through allowed relationships
         OPTIONAL MATCH path = (start)-[r*1..{depth}]-(m)
         WHERE ALL(rel IN r WHERE type(rel) IN $allowed_rel_types)
 
@@ -285,32 +284,22 @@ class Neo4jDBManager:
             collect(DISTINCT m) AS expanded_nodes,
             collect(DISTINCT r) AS rel_paths
 
-        // Flatten relationship paths
         WITH 
             start_nodes,
-            expanded_nodes,
-            [rel IN rel_paths | rel] AS nested_rels
-
-        UNWIND nested_rels AS rel_list
-        UNWIND rel_list AS single_rel
+            [n IN expanded_nodes WHERE n IS NOT NULL] AS expanded_nodes,
+            [rel IN rel_paths WHERE rel IS NOT NULL | rel] AS valid_paths
 
         WITH 
             start_nodes,
             expanded_nodes,
-            collect(DISTINCT single_rel) AS relationships
+            reduce(all_rels = [], path IN valid_paths | all_rels + path) AS relationships
 
-        WITH 
-            start_nodes,
-            expanded_nodes,
-            relationships,
+        RETURN 
             CASE 
                 WHEN size(relationships) = 0 
                 THEN start_nodes
                 ELSE start_nodes + expanded_nodes
-            END AS final_nodes
-
-        RETURN 
-            final_nodes AS nodes,
+            END AS nodes,
             relationships
         """
 
