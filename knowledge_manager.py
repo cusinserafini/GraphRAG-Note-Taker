@@ -291,7 +291,7 @@ class KnowledgeManager():
                     currently_used_entities.append({'name': entity_name, 'description': chunk_info['nodes'][entity_name]['description']})
 
             # updating currently found entities and relations
-            for entity in chunk_info['nodes']:
+            for entity_name in chunk_info['nodes'].keys():
                 currently_used_entities.append({'name': entity_name, 'description': chunk_info['nodes'][entity_name]['description']})
             for edge in chunk_info['edges']:   
                 currently_used_relations.append({'name': edge['relationship'], 'description': edge['description']})
