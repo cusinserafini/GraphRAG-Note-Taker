@@ -17,7 +17,7 @@ class KnowledgeManager():
         self.embedder = embedder
         self.collection_name = collection_name
         self.vector_db = QdrantDBManager(location=":localhost:")
-        self.vector_db.create_collection('test', 768)
+        self.vector_db.create_collection('test', 1024)
         self.graph_db = Neo4jDBManager()
         # agents
         self.data_extractor = DataExtractor(chat=self.chat)

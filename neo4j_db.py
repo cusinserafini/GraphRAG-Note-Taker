@@ -222,7 +222,7 @@ class Neo4jDBManager:
         query = f"""
         MATCH (n)
         WHERE elementId(n) IN $node_element_ids
-        MATCH (n)-[*1..{depth}]-(m)
+        OPTIONAL MATCH (n)-[*1..{depth}]-(m)
         WITH collect(DISTINCT n) + collect(DISTINCT m) AS nodes
         UNWIND nodes AS n1
         OPTIONAL MATCH (n1)-[r]->(n2)
@@ -241,4 +241,33 @@ class Neo4jDBManager:
                 "nodes": record["nodes"],
                 "relationships": record["relationships"]
             }
+        
+    def search_nodes_by_name(self, name: str, label: str = None):
+        """
+        Case-insensitive search by name.
+        Optionally restrict to a specific label.
+        """
+        if label:
+            query = f"""
+            MATCH (n:{label})
+            WHERE toLower(n.name) = toLower($name)
+            RETURN elementId(n) AS node_id, properties(n) AS properties
+            """
+        else:
+            query = """
+            MATCH (n)
+            WHERE toLower(n.name) = toLower($name)
+            RETURN elementId(n) AS node_id, properties(n) AS properties
+            """
+
+        def _execute(tx):
+            result = tx.run(query, name=name)
+            records = [
+                {"id": record["node_id"], **record["properties"]}
+                for record in result
+            ]
+            return records
+
+        with self.driver.session() as session:
+            return session.execute_read(_execute)
     

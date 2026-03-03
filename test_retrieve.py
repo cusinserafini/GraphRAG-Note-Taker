@@ -5,10 +5,7 @@ from retriever import Retriever
 
 # Initialize models
 embedder = Embedder()
-chat = Chat(
-    on_cpu=False,
-    verbose=False
-)
+chat = Chat(on_cpu=False, verbose=False, n_ctx=8192)
 
 # Initialize KB
 kb_manager = KnowledgeManager(
@@ -17,80 +14,135 @@ kb_manager = KnowledgeManager(
     collection_name='test'
 )
 
-# Upload knowledge
-text_chunk = "Captain Sarah Jenkins, known for her boisterous laugh and love of vintage jazz, took command of the research vessel 'Oceanus' in 2021. She was born in Nova Scotia. In the summer of 2023, the Oceanus embarked on the Mariana Trench Expedition. During this perilous journey, her crew discovered a new species of bioluminescent squid. They officially named it 'Luxteuthis'. The expedition was heavily funded by the Global Oceanic Institute with a generous grant of $1.2 million. Jenkins later published a groundbreaking research paper about the squid in 2024, which was co-authored by Dr. Hiroshi Tanaka, the ship's lead marine biologist."
-kb_manager.upload(text_chunk)
-
-# documents = [
-
-# """
-# Captain Sarah Jenkins took command of the research vessel Oceanus in 2021.
-# She was born in Nova Scotia in 1980.
-# Oceanus is owned by Blue Horizon Shipping.
-# """,
-
-# """
-# In 2023, Oceanus embarked on the Mariana Trench Expedition.
-# The expedition was funded by the Global Oceanic Institute
-# with a grant of $1.2 million.
-# """,
-
-# """
-# During the expedition, the crew discovered a bioluminescent squid.
-# The species was named Luxteuthis.
-# The naming was approved by the International Marine Taxonomy Council.
-# """,
-
-# """
-# Sarah Jenkins published a research paper in 2024 about Luxteuthis.
-# It was co-authored by Dr. Hiroshi Tanaka.
-# Tanaka is a marine biologist from Kyoto University.
-# """,
-
-# """
-# The Global Oceanic Institute is headquartered in London.
-# It frequently collaborates with Kyoto University.
-# """
-# ]
-
-# for doc in documents:
-#     kb_manager.upload(doc)
-
 # Initialize Retriever
 retriever = Retriever(
     graph_db=kb_manager.graph_db,
     vector_db=kb_manager.vector_db,
     embedder=embedder,
-    collection_name='test'
+    collection_name='test',
+    agentic=True
 )
 
 # Test queries
-queries = [
+# ==============================
+# LEVEL 1 — Direct Fact Retrieval
+# ==============================
 
-    # 2-hop: Expedition → funded by → organization → location
-    "Where is the organization that funded the Mariana Trench Expedition headquartered?",
-
-    # 3-hop reasoning
-    "Which university is affiliated with the co-author of the Luxteuthis paper?",
-
-    # Temporal reasoning
-    "How many years after taking command did Jenkins publish her paper?",
-
-    # Multi-entity linking
-    "Which institution is connected to both the expedition funder and the paper co-author?",
-
-    # Indirect reasoning
-    "Who approved the species discovered by the Oceanus crew?",
-
-    # Entity disambiguation
-    "Who owns the ship commanded by Sarah Jenkins?"
+level_1_queries = [
+    "Where was J. Oppenheimer born?",
+    "In which year was Apple founded?",
+    "Who co-authored the research paper about Luxteuthis?",
+    "Which city is a global leader in robotics and electronics?",
+    "Who directed the Los Alamos Laboratory?",
+    "Who took command of the Oceanus in 2021?",
+    "What expedition discovered Luxteuthis?",
+    "Who is the British designer mentioned in the text?"
 ]
 
-for query in queries:
+
+# ==============================
+# LEVEL 2 — Relationship Retrieval
+# ==============================
+
+level_2_queries = [
+    "Who funded the Mariana Trench Expedition?",
+    "Which organization funded scientific research about bioluminescent squid?",
+    "Who worked under Steve Jobs?",
+    "Which project is compared to the Manhattan Project?",
+    "Who published a research paper in 2024?",
+    "Which vessel embarked on the Mariana Trench Expedition?"
+]
+
+
+# ==============================
+# LEVEL 3 — Property Filtering
+# ==============================
+
+level_3_queries = [
+    "Which person was born in Nova Scotia?",
+    "Which scientist won two Nobel Prizes?",
+    "Which company generated 383 billion USD in revenue?",
+    "Which historical figure was born in 1904?",
+    "Which city is the capital of France?",
+    "Which designer emphasized simplicity and honesty in materials?"
+]
+
+
+# ==============================
+# LEVEL 4 — Multi-Hop Reasoning
+# ==============================
+
+level_4_queries = [
+    "Who funded the expedition led by Captain Sarah Jenkins?",
+    "Which scientist led a secret laboratory during World War II?",
+    "Which modern tech company is metaphorically linked to the Manhattan Project?",
+    "Who collaborated with the lead marine biologist?",
+    "Which people are connected to Apple?",
+    "Which historical project is linked philosophically to Silicon Valley?"
+]
+
+
+# ==============================
+# LEVEL 5 — Cross-Chunk Linking
+# ==============================
+
+level_5_queries = [
+    "What connects Oppenheimer and Project Purple?",
+    "Which organization did Jony Ive work at and where is it located?",
+    "Which individuals are associated with the Atomic Age?",
+    "Which cities are described as innovation hubs across time?",
+    "Which scientists contributed to physics before the modern computing era?"
+]
+
+
+# ==============================
+# LEVEL 6 — Entity Resolution Stress Tests
+# ==============================
+
+level_6_queries = [
+    "Who worked under Steve Jobs at Apple?",
+    "Who led a secret research laboratory?",
+    "Which project harnessed atomic power?",
+    "Which project harnessed microprocessor power?",
+    "Which Apple employee focused on aesthetics?",
+    "Who funded a GraphRAG company?",
+    "What is GraphRAG?",
+    "Is Project Purple related to the Manhattan Project?"
+]
+
+
+# ==============================
+# LEVEL 7 — Failure / Hallucination Tests
+# ==============================
+
+level_7_queries = [
+    "What is Steve Jobs' birth date?",
+    "Where was Marie Curie born?",
+    "What was Apple's revenue in 2023?",
+    "Who discovered Luxteuthis alone?",
+    "Which Nobel Prize did Oppenheimer win?"
+]
+
+
+# ==============================
+# ALL QUERIES TOGETHER
+# ==============================
+
+all_queries = (
+    level_1_queries +
+    level_2_queries +
+    level_3_queries +
+    level_4_queries +
+    level_5_queries +
+    level_6_queries +
+    level_7_queries
+)
+
+for query in level_7_queries:
     print("\n==============================")
     print("QUERY:", query)
 
-    context = retriever.retrieve(query, depth=3)
+    context = retriever.retrieve(query, depth=3, chat=chat)
 
     print("\nRetrieved Context:")
     print(context)

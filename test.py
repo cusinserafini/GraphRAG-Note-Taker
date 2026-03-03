@@ -15,7 +15,7 @@ chat = None
 
 # models initialization
 embedder = Embedder()
-chat = Chat(on_cpu=False, verbose=False, n_ctx=4096)
+chat = Chat(on_cpu=False, verbose=False, n_ctx=8192)
 
 kb_manager = KnowledgeManager(
     chat=chat,
