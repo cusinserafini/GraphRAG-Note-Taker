@@ -353,6 +353,7 @@ class KnowledgeManager():
             context += self.retriever.retrieve(query, top_k=5, depth=1, agentic=True, chat=self.chat)
         
         messages = [
+            # {"role": "system", "content": "Do not output reasoning. Do not use <think> tags."},
             {"role": "system", "content": "Answer using ONLY the provided context. If not present, say 'Not found in context.'"},
             {"role": "user", "content": f"Context:\n{context}\n\nQuestion: {query}"}
         ]

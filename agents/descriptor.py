@@ -27,7 +27,7 @@ class Descriptor(Agent):
         # TODO: make more robust the extraction: what happens if the LLM does not generate the json?
         # TODO: llama.cpp gives the possibility to enforce the generation of a JSON output: investigate
 
-        user_message = f"**Source Text:** {text}\n\n**Extracted Nodes:**\n{nodes_str}\n**Extracted Relationships:**\n{relationships_str}\n\When you write the names and description, write just plain text, not markdown or quotation marks."
+        user_message = f"**Source Text:** {text}\n\n**Extracted Nodes:**\n{nodes_str}\n**Extracted Relationships:**\n{relationships_str}\nWhen you write the names and description, write just plain text, not markdown or quotation marks."
         output = self.execute_basic_call(user_message)
         descriptions = self.parse_graph_ontology(output)
 

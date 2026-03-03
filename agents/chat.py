@@ -31,11 +31,10 @@ class Chat:
         if "<think>" in text and "</think>" in text:
             return text.split("</think>", 1)[1].strip()
         return text.strip()
-    
+
     def _stream_without_thinking(self, stream):
         buffer = ""
         thinking = False
-        passed_think_block = False
 
         for chunk in stream:
             delta = chunk["choices"][0]["delta"]
@@ -46,30 +45,28 @@ class Chat:
 
             buffer += token
 
-            # Detect start of reasoning
             if "<think>" in buffer:
                 thinking = True
 
-            # Detect end of reasoning
             if "</think>" in buffer:
                 thinking = False
-                passed_think_block = True
-                # Remove everything before </think>
                 buffer = buffer.split("</think>", 1)[1]
+
                 if buffer.strip():
-                    yield buffer
+                    yield {
+                        "choices": [
+                            {"delta": {"content": buffer}}
+                        ]
+                    }
                 buffer = ""
                 continue
 
-            # If we never entered thinking → stream normally
-            if not thinking and not passed_think_block:
-                yield token
-
-            # If thinking block finished → stream normally
-            elif passed_think_block and not thinking:
-                if buffer.strip():
-                    yield buffer
-                    buffer = ""
+            if not thinking:
+                yield {
+                    "choices": [
+                        {"delta": {"content": token}}
+                    ]
+                }
 
     def ask(self, messages:List[MessageFormat], streaming:bool = False, max_new_tokens:bool = 1024):
         """
@@ -85,9 +82,9 @@ class Chat:
             content = output['choices'][0]['message']['content']
             return self._strip_thinking(content)
         
-        return self.llm.create_chat_completion(
+        stream = self.llm.create_chat_completion(
             messages = messages, 
             max_tokens = max_new_tokens,
             stream = streaming,
         )
-        # return self._stream_without_thinking(stream)
+        return self._stream_without_thinking(stream)

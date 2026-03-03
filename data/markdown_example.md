@@ -1,18 +1,12 @@
-# Historical and Modern Innovators
+# Alan Turing and the Foundations of Computation
 
-## The Tech Era
-**Apple** revolutionized the personal computing and mobile phone industries. Known primarily for the iPhone and Mac, the enterprise has grown significantly over the decades. 
-* **Details:**
-  * **place**: Cupertino, California
-  * **years_old**: 48 (founded in 1976)
-  * **total_revenue**: 383 billion USD
+Alan Turing proposed a theoretical model of computation that would later become known as the Turing Machine. His 1936 paper demonstrated that a single abstract machine could simulate any algorithmic process.
 
-## The Atomic Age
-Long before modern computing, brilliant minds were altering the course of human history. **J. Oppenheimer** was a pivotal figure during World War II. As a theoretical physicist involved in the Manhattan Project, he directed the Los Alamos Laboratory.
-* **Details:**
-  * **dob**: April 22, 1904
-  * **social_security_number**: 000-00-0000 (Redacted)
-  * **birth_place**: New York City
+During World War II, Turing worked at Bletchley Park, contributing to the decryption of the German Enigma cipher. His work helped shorten the war and demonstrated how mathematical theory could directly impact global events.
 
-## Global Hubs
-Innovation doesn't happen in a vacuum; it is often centered in major global hubs. For instance, **Paris**, the capital city of France, has historically been a center for art, science, and European diplomacy.
+Although modern computers look nothing like his theoretical machine, the logical structure remains fundamentally aligned with his model.
+
+**Metadata**
+- Field: Mathematics, Cryptography
+- Key Concept: Universal computation
+- Wartime Role: Codebreaking at Bletchley Park

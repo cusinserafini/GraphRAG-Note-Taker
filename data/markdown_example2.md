@@ -1,1 +1,7 @@
-Captain Sarah Jenkins, known for her boisterous laugh and love of vintage jazz, took command of the research vessel 'Oceanus' in 2021. She was born in Nova Scotia. In the summer of 2023, the Oceanus embarked on the Mariana Trench Expedition. During this perilous journey, her crew discovered a new species of bioluminescent squid. They officially named it 'Luxteuthis'. The expedition was heavily funded by the Global Oceanic Institute with a generous grant of $1.2 million. Jenkins later published a groundbreaking research paper about the squid in 2024, which was co-authored by Dr. Hiroshi Tanaka, the ship's lead marine biologist.
+# The Emergence of ARPANET
+
+In the late 1960s, ARPANET was developed as a research network funded by the U.S. Department of Defense. Its goal was to create a communication system resilient to partial outages.
+
+Unlike later consumer networks, ARPANET connected universities and research institutions. The adoption of TCP/IP protocols in 1983 allowed independent networks to interconnect, forming the early Internet.
+
+This infrastructure later enabled innovations such as the World Wide Web and cloud computing platforms.
