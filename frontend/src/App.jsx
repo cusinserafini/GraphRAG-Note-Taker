@@ -189,7 +189,7 @@ function App() {
       {/* Sidebar Area */}
       <div className="sidebar">
         <div className="sidebar-header">
-          <h2 className="sidebar-title">Obsidian Graph</h2>
+          <h2 className="sidebar-title">GraphRAG Note-Taker</h2>
           <div style={{ display: 'flex', gap: '8px' }}>
             <button className="btn" onClick={createNewFile}>
               <Plus size={16} /> New File
