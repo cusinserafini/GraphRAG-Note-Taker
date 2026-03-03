@@ -46,6 +46,7 @@ class NodePayload():
 @dataclass
 class ChunkPayload():
     # chunk's payload present in the vector DB 
+    text: str
     type: str = "chunk"
 
     def as_dict(self):

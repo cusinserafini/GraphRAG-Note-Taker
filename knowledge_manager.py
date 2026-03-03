@@ -288,7 +288,7 @@ class KnowledgeManager():
         self.vector_db.insert_points(
             collection_name=self.collection_name,
             points=embeddings,
-            payloads=[ChunkPayload().as_dict()] * len(embeddings)
+            payloads=[ChunkPayload(text=text).as_dict() for text in chunk_texts]
         )
         
 
