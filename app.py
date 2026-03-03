@@ -73,21 +73,17 @@ def update_file(filename):
 def upload_to_graph():
     data = request.json
     filename = data.get("filename")
-    print(f"Uploading {filename}")
 
     if not filename:
         return jsonify({"error": "Filename is required"}), 400
 
-    print(f"Uploading {filename}")
     file_path = os.path.join(DATA_DIR, secure_filename(filename))
     if not os.path.exists(file_path):
         return jsonify({"error": "File not found"}), 404
         
-    print(f"Uploading {filename}")
     if not kb_manager:
         return jsonify({"error": "KnowledgeManager failed to initialize"}), 500
 
-    print(f"Uploading {filename}")
     try:
         # The upload method takes the full file path to process and chunk it
         print(f"Uploading {file_path}")
