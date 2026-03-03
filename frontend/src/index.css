@@ -7,7 +7,7 @@
   --accent: #5c5cff;
   --accent-hover: #7b7bff;
   --border-color: #3e3e42;
-  
+
   font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
   color-scheme: dark;
   color: var(--text-primary);
@@ -148,9 +148,22 @@ textarea.markdown-input:focus {
   color: #e0e0e0;
 }
 
-.preview-pane h1 { font-size: 2em; margin-bottom: 0.5em; border-bottom: 1px solid var(--border-color); padding-bottom: 0.3em; }
-.preview-pane h2 { font-size: 1.5em; margin-bottom: 0.5em; }
-.preview-pane p { margin-bottom: 1em; }
+.preview-pane h1 {
+  font-size: 2em;
+  margin-bottom: 0.5em;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.3em;
+}
+
+.preview-pane h2 {
+  font-size: 1.5em;
+  margin-bottom: 0.5em;
+}
+
+.preview-pane p {
+  margin-bottom: 1em;
+}
+
 .preview-pane blockquote {
   border-left: 4px solid var(--accent);
   margin: 0;
@@ -160,6 +173,7 @@ textarea.markdown-input:focus {
   padding: 0.5em 1em;
   border-radius: 4px;
 }
+
 .preview-pane code {
   background-color: var(--bg-tertiary);
   padding: 0.2em 0.4em;
@@ -169,7 +183,7 @@ textarea.markdown-input:focus {
 
 /* Chat Modal */
 .chat-panel {
-  width: 350px;
+  width: 400px;
   background-color: var(--bg-secondary);
   border-left: 1px solid var(--border-color);
   display: flex;

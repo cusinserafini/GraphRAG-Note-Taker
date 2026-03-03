@@ -3,12 +3,12 @@ import ReactMarkdown from 'react-markdown';
 import axios from 'axios';
 import {
   FileText, Plus, Upload, MessageSquare,
-  PanelRightClose, PanelRightOpen, Save, Loader2
+  PanelRightClose, PanelRightOpen, Save, Loader2, Trash2
 } from 'lucide-react';
 import './index.css';
 
 // Using the same port mapped in docker-compose or local run
-const API_URL = 'http://localhost:5002/api';
+const API_URL = 'http://localhost:5001/api';
 
 function App() {
   const [files, setFiles] = useState([]);
@@ -18,6 +18,7 @@ function App() {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput] = useState('');
+  const [researchType, setResearchType] = useState('RAG'); // Added research type state
   const [isUploading, setIsUploading] = useState(false);
   const [isAsking, setIsAsking] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -109,14 +110,75 @@ function App() {
     setChatInput('');
     setIsAsking(true);
 
+    // Initial empty bot message we will update character by character
+    setChatMessages((prev) => [...prev, { role: 'bot', content: '' }]);
+
     try {
-      const res = await axios.post(`${API_URL}/ask`, { question: userMsg.content });
-      setChatMessages((prev) => [...prev, { role: 'bot', content: res.data.answer }]);
+      const response = await fetch(`${API_URL}/ask`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ question: userMsg.content, type: researchType }), // Passed research type
+      });
+
+      if (!response.body) {
+        throw new Error('ReadableStream not yet supported in this browser.');
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder('utf-8');
+
+      let done = false;
+      while (!done) {
+        const { value, done: readerDone } = await reader.read();
+        done = readerDone;
+        if (value) {
+          const chunk = decoder.decode(value, { stream: true });
+          const messages = chunk.split('\n\n');
+          for (let msg of messages) {
+            msg = msg.trim();
+            if (msg.startsWith('data: ')) {
+              const data = msg.slice(6); // remove "data: "
+              if (data === '[DONE]') {
+                done = true;
+              } else if (data.startsWith('[ERROR]')) {
+                setChatMessages((prev) => {
+                  const next = [...prev];
+                  const lastIndex = next.length - 1;
+                  next[lastIndex] = {
+                    ...next[lastIndex],
+                    content: next[lastIndex].content + "\n\nError: " + data.slice(7)
+                  };
+                  return next;
+                });
+                done = true;
+              } else {
+                setChatMessages((prev) => {
+                  const next = [...prev];
+                  const lastIndex = next.length - 1;
+                  next[lastIndex] = {
+                    ...next[lastIndex],
+                    content: next[lastIndex].content + data
+                  };
+                  return next;
+                });
+              }
+            }
+          }
+        }
+      }
+
     } catch (err) {
-      setChatMessages((prev) => [
-        ...prev,
-        { role: 'bot', content: "Error: " + (err.response?.data?.error || err.message) }
-      ]);
+      setChatMessages((prev) => {
+        const next = [...prev];
+        const lastIndex = next.length - 1;
+        next[lastIndex] = {
+          ...next[lastIndex],
+          content: "Error: " + err.message
+        };
+        return next;
+      });
     } finally {
       setIsAsking(false);
     }
@@ -199,8 +261,19 @@ function App() {
 
       {/* Chat / LLM Panel */}
       <div className={`chat-panel ${!isChatOpen ? 'closed' : ''}`}>
-        <div className="chat-header">
-          <MessageSquare size={16} /> Knowledge Assistant
+        <div className="chat-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <MessageSquare size={16} style={{ display: 'inline', marginRight: '6px' }} /> Knowledge Assistant
+          </div>
+          <button
+            className="btn icon-btn"
+            title="Clear Chat"
+            onClick={() => setChatMessages([])}
+            disabled={isAsking || chatMessages.length === 0}
+            style={{ padding: '4px' }}
+          >
+            <Trash2 size={16} />
+          </button>
         </div>
 
         <div className="chat-history">
@@ -226,15 +299,29 @@ function App() {
         </div>
 
         <form className="chat-input-area" onSubmit={askQuestion}>
-          <input
-            type="text"
-            className="chat-input"
-            placeholder="Ask something..."
-            value={chatInput}
-            onChange={e => setChatInput(e.target.value)}
-            disabled={isAsking}
-          />
-          <button type="submit" className="btn primary" disabled={isAsking || !chatInput.trim()}>
+          <div style={{ display: 'flex', width: '100%', marginBottom: '8px' }}>
+            <select
+              value={researchType}
+              onChange={e => setResearchType(e.target.value)}
+              className="chat-input"
+              style={{ width: 'auto', flexGrow: 0, marginRight: '8px', padding: '6px 12px' }}
+              disabled={isAsking}
+            >
+              <option value="RAG">RAG</option>
+              <option value="Graph">Graph</option>
+              <option value="Agentic">Agentic</option>
+            </select>
+            <input
+              type="text"
+              className="chat-input"
+              style={{ flexGrow: 1 }}
+              placeholder="Ask something..."
+              value={chatInput}
+              onChange={e => setChatInput(e.target.value)}
+              disabled={isAsking}
+            />
+          </div>
+          <button type="submit" className="btn primary" disabled={isAsking || !chatInput.trim()} style={{ width: '100%' }}>
             Send
           </button>
         </form>

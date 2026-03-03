@@ -8,7 +8,7 @@ class QdrantDBManager:
     """
     A class to manage a Qdrant database with basic CRUD operations.
     """
-    def __init__(self, location: str = ":memory:", host: str = "localhost", port: int = 6333):
+    def __init__(self, location: str = ":memory:", host: str = "localhost", port: int = 6333, url: str = None):
         """
         Initializes the Qdrant DB Manager.
         
@@ -17,8 +17,11 @@ class QdrantDBManager:
                 To use a running Qdrant instance, set location=None and provide host/port.
             host (str): Qdrant host.
             port (int): Qdrant port.
+            url (str): Full URL to Qdrant instance.
         """
-        if location == ":memory:":
+        if url:
+            self.client = QdrantClient(url=url)
+        elif location == ":memory:":
             self.client = QdrantClient(location=":memory:")
         else:
             self.client = QdrantClient(host=host, port=port)

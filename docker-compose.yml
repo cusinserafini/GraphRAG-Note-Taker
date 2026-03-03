@@ -6,7 +6,7 @@ services:
       - "7474:7474"
       - "7687:7687"
     environment:
-      NEO4J_AUTH: "neo4j/password"
+      NEO4J_AUTH: "${NEO4J_USER:-neo4j}/${NEO4J_PASSWORD:-password}"
     volumes:
       - neo4j_data:/data
 
@@ -18,21 +18,18 @@ services:
     volumes:
       - qdrant_storage:/qdrant/storage
 
-  backend:
+  frontend:
     build:
-      context: .
-      dockerfile: backend.Dockerfile
-    container_name: flask_backend
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: react_frontend
     ports:
-      - "5001:5001"
+      - "5173:5173"
     volumes:
-      - .:/app
-    depends_on:
-      - neo4j
-      - qdrant
+      - ./frontend:/app
+      - /app/node_modules
     environment:
-      - NEO4J_URI=bolt://neo4j:7687
-      - QDRANT_URL=http://qdrant:6333
+      - VITE_API_URL=http://localhost:5001
 
 volumes:
   neo4j_data:

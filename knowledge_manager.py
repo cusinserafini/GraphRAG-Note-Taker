@@ -1,3 +1,5 @@
+import os
+from retriever import Retriever
 from agents.data_types import ChunkPayload
 from utils import chunk_markdown_files
 import numpy as np
@@ -17,14 +19,29 @@ class KnowledgeManager():
         self.chat = chat
         self.embedder = embedder
         self.collection_name = collection_name
-        self.vector_db = QdrantDBManager(location=":localhost:")
+        qdrant_url = os.environ.get("QDRANT_URL")
+        if qdrant_url:
+            self.vector_db = QdrantDBManager(url=qdrant_url)
+        else:
+            self.vector_db = QdrantDBManager(location=":localhost:")
         self.vector_db.create_collection('test', 768)
-        self.graph_db = Neo4jDBManager()
+        
+        neo4j_uri = os.environ.get("NEO4J_URI", "bolt://localhost:7687")
+        neo4j_user = os.environ.get("NEO4J_USER", "neo4j")
+        neo4j_password = os.environ.get("NEO4J_PASSWORD", "password")
+        self.graph_db = Neo4jDBManager(uri=neo4j_uri, user=neo4j_user, password=neo4j_password)
+        self.retriever = Retriever(
+            graph_db=self.graph_db,
+            vector_db=self.vector_db, 
+            embedder=self.embedder,
+            collection_name=self.collection_name
+        )
         # agents
         self.data_extractor = DataExtractor(chat=self.chat)
         self.descriptor = Descriptor(chat=self.chat)
         self.node_relation_merger = NodeRelationMerger(self.chat)
         self.properties_merger = PropertiesMerger(self.chat)
+
 
     def _create_nodes_relations_embeddings(self, graph_info:GraphInfo):
         """
@@ -322,9 +339,19 @@ class KnowledgeManager():
             relation_names=relation_names
         )
 
-    def ask_question(self, text:str):
-        # TODO: to implement
-        raise NotImplementedError()
+    def ask_question(self, query:str):
+        text_chunks = self.retriever.rag(query=query)
+        context = "CONTEXT:\n"
+        for text in text_chunks:
+            context += f"{text}\n\n"
+        
+        messages = [
+            {"role": "system", "content": "Answer using ONLY the provided context. If not present, say 'Not found in context.'"},
+            {"role": "user", "content": f"Context:\n{context}\n\nQuestion: {query}"}
+        ]
+
+        for token in self.chat.ask(messages, streaming=True):
+            yield token
 
     def delete(self):
         # TODO: to implement

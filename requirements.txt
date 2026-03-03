@@ -44,7 +44,7 @@ huggingface_hub==1.5.0
 hyperframe==6.1.0
 idna==3.11
 ipykernel==7.2.0
-ipython==9.10.0
+ipython
 ipython_pygments_lexers==1.1.1
 itsdangerous==2.2.0
 jedi==0.19.2
@@ -68,9 +68,9 @@ multidict==6.7.1
 mypy_extensions==1.1.0
 neo4j==6.1.0
 nest-asyncio==1.6.0
-networkx==3.6.1
+networkx
 nltk==3.9.3
-numpy==2.4.2
+numpy
 ollama==0.6.1
 packaging==26.0
 parso==0.8.6
@@ -97,8 +97,8 @@ regex==2026.2.19
 requests==2.32.5
 rich==14.3.3
 safetensors==0.7.0
-scikit-learn==1.8.0
-scipy==1.17.1
+scikit-learn
+scipy
 sentence-transformers==5.2.3
 setuptools==82.0.0
 shellingham==1.5.4
@@ -111,7 +111,7 @@ threadpoolctl==3.6.0
 tiktoken==0.12.0
 tinytag==2.2.0
 tokenizers==0.22.2
-torch==2.10.0
+torch
 tornado==6.5.4
 tqdm==4.67.3
 traitlets==5.14.3

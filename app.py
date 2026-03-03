@@ -1,3 +1,4 @@
+from flask import Response
 import os
 import glob
 from flask import Flask, request, jsonify
@@ -5,9 +6,7 @@ from flask_cors import CORS
 from werkzeug.utils import secure_filename
 
 # Assuming KnowledgeManager imports work from project root
-from embedder import Embedder
-from agents import Chat
-from knowledge_manager import KnowledgeManager
+from app_kb_initializer import kb_manager
 
 app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "*"}})  # Enable CORS for the frontend
@@ -16,23 +15,9 @@ DATA_DIR = "data"
 if not os.path.exists(DATA_DIR):
     os.makedirs(DATA_DIR)
 
-# Initialize ML models
-print("Initializing Models & KnowledgeManager...")
-try:
-    # embedder = Embedder()
-    # chat = Chat(on_cpu=True, verbose=False)
-    # kb_manager = KnowledgeManager(
-    #     chat=chat,
-    #     embedder=embedder,
-    #     collection_name='test'
-    # )
-    embedder = None
-    chat = None
-    kb_manager = None
-except Exception as e:
-    print(f"Error initializing models: {e}")
-    kb_manager = None
-
+@app.route("/")
+def index():
+    return jsonify({"status": "Backend is running!"}), 200
 
 @app.route("/api/files", methods=["GET"])
 def list_files():
@@ -88,45 +73,73 @@ def update_file(filename):
 def upload_to_graph():
     data = request.json
     filename = data.get("filename")
+    print(f"Uploading {filename}")
+
     if not filename:
         return jsonify({"error": "Filename is required"}), 400
-        
+
+    print(f"Uploading {filename}")
     file_path = os.path.join(DATA_DIR, secure_filename(filename))
     if not os.path.exists(file_path):
         return jsonify({"error": "File not found"}), 404
         
+    print(f"Uploading {filename}")
     if not kb_manager:
         return jsonify({"error": "KnowledgeManager failed to initialize"}), 500
-        
+
+    print(f"Uploading {filename}")
     try:
         # The upload method takes the full file path to process and chunk it
+        print(f"Uploading {file_path}")
         kb_manager.upload(file_path)
         return jsonify({"message": "Successfully uploaded file to Graph and Vector DB"}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
 @app.route("/api/ask", methods=["POST"])
 def ask_question():
     data = request.json
     question = data.get("question")
-    
+    research_type = data.get("type", "RAG") # Retrieve the research type, default to RAG
+
     if not question:
         return jsonify({"error": "Question is required"}), 400
         
     if not kb_manager:
         return jsonify({"error": "KnowledgeManager failed to initialize"}), 500
-        
+    
     try:
-        # Call the existing ask_question method (user will implement its internals later)
-        answer = kb_manager.ask_question(question)
+        # Route depending on the research type
+        if research_type == "RAG":
+            # Call the existing ask_question method which returns a generator of tokens
+            generator = kb_manager.ask_question(question)
+        elif research_type in ["Graph", "Agentic"]:
+            # Placeholder for not implemented functionality
+            def dummy_generator():
+                yield {"choices": [{"delta": {"content": "pass"}}]}
+            
+            generator = dummy_generator()
+        else:
+             return jsonify({"error": "Unknown research type"}), 400
         
-        # If the method is not implemented yet, it throws NotImplementedError
-        return jsonify({"answer": answer}), 200
+        def stream_response():
+            try:
+                for token in generator:
+                    # Keep it simple for the frontend to parse
+                    delta = token["choices"][0]["delta"]
+                    if "content" in delta:
+                        yield f"data: {delta['content']}\n\n"
+            except Exception as e:
+                yield f"data: [ERROR] {str(e)}\n\n"
+            finally:
+                yield "data: [DONE]\n\n"
+                
+        return Response(stream_response(), mimetype='text/event-stream')
     except NotImplementedError:
-        # Return a mock response for now
-        return jsonify({"answer": "Error: ask_question not implemented yet. The question was received but the implementation is pending."}), 200
+        return jsonify({"error": "ask_question not implemented yet."}), 501
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5002, debug=True)
+    app.run(host="0.0.0.0", port=5001, debug=False)
