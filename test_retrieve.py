@@ -19,15 +19,12 @@ retriever = Retriever(
     graph_db=kb_manager.graph_db,
     vector_db=kb_manager.vector_db,
     embedder=embedder,
-    collection_name='test',
-    agentic=True
+    collection_name='test'
 )
 
 # Test queries
-# ==============================
-# LEVEL 1 — Direct Fact Retrieval
-# ==============================
 
+# LEVEL 1 — Direct Fact Retrieval
 level_1_queries = [
     "Where was J. Oppenheimer born?",
     "In which year was Apple founded?",
@@ -39,11 +36,7 @@ level_1_queries = [
     "Who is the British designer mentioned in the text?"
 ]
 
-
-# ==============================
 # LEVEL 2 — Relationship Retrieval
-# ==============================
-
 level_2_queries = [
     "Who funded the Mariana Trench Expedition?",
     "Which organization funded scientific research about bioluminescent squid?",
@@ -53,11 +46,7 @@ level_2_queries = [
     "Which vessel embarked on the Mariana Trench Expedition?"
 ]
 
-
-# ==============================
 # LEVEL 3 — Property Filtering
-# ==============================
-
 level_3_queries = [
     "Which person was born in Nova Scotia?",
     "Which scientist won two Nobel Prizes?",
@@ -67,11 +56,7 @@ level_3_queries = [
     "Which designer emphasized simplicity and honesty in materials?"
 ]
 
-
-# ==============================
 # LEVEL 4 — Multi-Hop Reasoning
-# ==============================
-
 level_4_queries = [
     "Who funded the expedition led by Captain Sarah Jenkins?",
     "Which scientist led a secret laboratory during World War II?",
@@ -81,11 +66,7 @@ level_4_queries = [
     "Which historical project is linked philosophically to Silicon Valley?"
 ]
 
-
-# ==============================
 # LEVEL 5 — Cross-Chunk Linking
-# ==============================
-
 level_5_queries = [
     "What connects Oppenheimer and Project Purple?",
     "Which organization did Jony Ive work at and where is it located?",
@@ -94,11 +75,7 @@ level_5_queries = [
     "Which scientists contributed to physics before the modern computing era?"
 ]
 
-
-# ==============================
 # LEVEL 6 — Entity Resolution Stress Tests
-# ==============================
-
 level_6_queries = [
     "Who worked under Steve Jobs at Apple?",
     "Who led a secret research laboratory?",
@@ -110,11 +87,7 @@ level_6_queries = [
     "Is Project Purple related to the Manhattan Project?"
 ]
 
-
-# ==============================
 # LEVEL 7 — Failure / Hallucination Tests
-# ==============================
-
 level_7_queries = [
     "What is Steve Jobs' birth date?",
     "Where was Marie Curie born?",
@@ -123,10 +96,6 @@ level_7_queries = [
     "Which Nobel Prize did Oppenheimer win?"
 ]
 
-
-# ==============================
-# ALL QUERIES TOGETHER
-# ==============================
 
 all_queries = (
     level_1_queries +
@@ -138,12 +107,11 @@ all_queries = (
     level_7_queries
 )
 
-# for query in level_7_queries:
-query = "Which organization did Jony Ive work at and where is it located?"
+query = "Did Jony Ive work at Apple?"
 print("\n==============================")
 print("QUERY:", query)
 
-context = retriever.retrieve(query, top_k=5, depth=3, chat=chat)
+context = retriever.retrieve(query, top_k=5, depth=2, agentic=False, chat=None)
 
 print("\nRetrieved Context:")
 print(context)

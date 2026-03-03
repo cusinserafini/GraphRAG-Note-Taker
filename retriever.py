@@ -6,12 +6,11 @@ from neo4j_db import Neo4jDBManager
 from agents import NodePayload, DataExtractor, Chat, Descriptor, EdgePayload
 
 class Retriever:
-    def __init__(self, graph_db:Neo4jDBManager, vector_db:QdrantDBManager, embedder:Embedder, collection_name:str, agentic: bool = False):
+    def __init__(self, graph_db:Neo4jDBManager, vector_db:QdrantDBManager, embedder:Embedder, collection_name:str):
         self.graph_db = graph_db
         self.vector_db = vector_db
         self.embedder = embedder
         self.collection_name = collection_name
-        self.agentic = agentic
     
     def retrieve_seeds(self, query: str, top_k: int = 5):
         query_embedding = self.embedder.embed_text([query])[0]
@@ -41,7 +40,7 @@ class Retriever:
         chunk_info = data_extractor(text=query, current_entities=[], current_relations=[])
         chunk_info = descriptor(text=query, graph_info=chunk_info)
 
-        # ---- Extract entities ----
+        # Extract entities
         entities = []
         for name, node_data in chunk_info.get("nodes", {}).items():
             entities.append({
@@ -49,24 +48,23 @@ class Retriever:
                 "description": node_data.get("description", "")
             })
 
-        # ---- Extract relationships ----
+        # Extract relationships
         edges = []
         for edge in chunk_info.get("edges", []):
             edges.append({
-                "source": edge.get("source"),
-                "target": edge.get("target"),
-                "type": edge.get("type"),
-                "description": edge.get("description", "")
+                "subject": edge.get("subject", ""),
+                "relationship": edge.get("relationship", ""),
+                "object": edge.get("object", ""),
+                "description": edge.get("description", ""),
             })
 
-        print(entities, edges)
         return entities, edges
     
     def match_entities_vector(self, entities, top_k=3):
         matched_ids = []
 
         for entity in entities:
-            text = f"{entity['name']}. {entity['description']}"
+            text = f"NAME={entity['name']}\nDESCRIPTION={entity['description']}"
             embedding = self.embedder.embed_text([text])[0]
 
             results = self.vector_db.search_points(
@@ -84,10 +82,10 @@ class Retriever:
         return matched_ids
     
     def match_relations_vector(self, edges, top_k=3):
-        matched_rel_types = set()
+        matched_relationships = set()
 
         for edge in edges:
-            text = f"{edge['type']}. {edge['description']}"
+            text = f"{edge['relationship']}. {edge['description']}"
             embedding = self.embedder.embed_text([text])[0]
 
             results = self.vector_db.search_points(
@@ -99,10 +97,10 @@ class Retriever:
 
             for response in results:
                 for point in response.points:
-                    if point.payload and "rel_type" in point.payload:
-                        matched_rel_types.add(point.payload["rel_type"])
+                    if point.payload and "name" in point.payload:
+                        matched_relationships.add(point.payload["name"])
 
-        return list(matched_rel_types)
+        return list(matched_relationships)
     
     def format_subgraph(self, nodes, relationships):
         context_parts = []
@@ -127,7 +125,6 @@ class Retriever:
             other_props = {
                 k: v for k, v in props.items()
                 if k not in ["name", "description"]
-                # if k not in ["name", "description", "uid"]
             }
             if other_props:
                 node_text += f"\nAttributes: {other_props}"
@@ -153,37 +150,24 @@ class Retriever:
 
         return "\n\n".join(context_parts)
     
-    def retrieve(self, query: str, top_k: int = 5, depth: int = 1, chat=None):
-        # exact_ids = []
-        vector_ids = self.retrieve_seeds(query, top_k)
-        # Extract entities from query
-        if self.agentic and chat is not None:
-            print("\t> Extracting informations from query")
+    def retrieve(self, query: str, top_k: int = 5, depth: int = 1, agentic: bool = False, chat: Chat = None):
+        if agentic and chat is not None:
+            print("\t> Agentic Search: extracting informations from query")
             entities, edges = self.retrieve_entities(query, chat)
 
-            exact_ids = self.match_entities_vector(entities)
-            matched_rel_types = self.match_relations_vector(edges)
+            exact_ids = self.match_entities_vector(entities, top_k=top_k)
+            matched_rel_types = self.match_relations_vector(edges, top_k=top_k)
 
-            # exact_ids = list(dict.fromkeys(exact_ids))
-
-            # for entity_name in entities:
-            #     matches = self.graph_db.search_nodes_by_name(entity_name)
-
-            #     for match in matches:
-            #         exact_ids.append(match["id"])
-
-            seed_ids = list(dict.fromkeys(exact_ids + vector_ids))
+            seed_ids = list(dict.fromkeys(exact_ids))
             if not seed_ids:
                 return ""
             
-            subgraph = self.graph_db.get_k_hop_filtered_subgraph(
-                seed_ids,
-                matched_rel_types,
-                depth=depth
-            )
-            print(subgraph)
+            matched_rel_types = [rel.upper() for rel in matched_rel_types]
+            subgraph = self.graph_db.get_k_hop_filtered_subgraph(seed_ids, matched_rel_types, depth=depth)
 
         else:
+            print("\t> Standard Search")
+            vector_ids = self.retrieve_seeds(query, top_k)
             seed_ids = list(dict.fromkeys(vector_ids))
             if not seed_ids:
                 return ""
