@@ -21,7 +21,7 @@ class DataExtractor(Agent):
         # TODO: llama.cpp gives the possibility to enforce the generation of a JSON output: investigate
 
         # extracting informations
-        output = self.execute_basic_call(f"**Input:**\nExisting Entities: {current_entities}\nExisting Relations: {current_relations}\nText: {text}\n\nBe far-sighted: the distinction between propertie and node is important.")
+        output = self.execute_basic_call(f"**Input:**\nExisting Entities: {current_entities}\nExisting Relations: {current_relations}\nText: {text}\n\nBe far-sighted: the distinction between properties and node is important.")
         graph_data = self.parse_property_graph(output)
         return graph_data
 

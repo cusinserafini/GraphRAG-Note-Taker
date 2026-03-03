@@ -24,7 +24,7 @@ class KnowledgeManager():
             self.vector_db = QdrantDBManager(url=qdrant_url)
         else:
             self.vector_db = QdrantDBManager(location=":localhost:")
-        self.vector_db.create_collection('test', 768)
+        self.vector_db.create_collection('test', 1024)
         
         neo4j_uri = os.environ.get("NEO4J_URI", "bolt://localhost:7687")
         neo4j_user = os.environ.get("NEO4J_USER", "neo4j")
