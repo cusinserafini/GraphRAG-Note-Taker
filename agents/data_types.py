@@ -44,6 +44,15 @@ class NodePayload():
         return asdict(self)
 
 @dataclass
+class ChunkPayload():
+    # chunk's payload present in the vector DB 
+    text: str
+    type: str = "chunk"
+
+    def as_dict(self):
+        return asdict(self)
+
+@dataclass
 class GraphNode():
     # used to upload a node in the graph
     properties: dict[str, Any]

@@ -3,11 +3,13 @@ from llama_cpp import Llama
 from .data_types import MessageFormat
 
 class Chat:
-    def __init__(self, on_cpu:bool = False, verbose:bool = False, n_ctx:int = 8192):
+    def __init__(self, on_cpu:bool = False, verbose:bool = False, n_ctx:int = 4096):
         # getting the model from HF
         self.llm = Llama.from_pretrained(
-            repo_id = "google/gemma-3-4b-it-qat-q4_0-gguf",
-            filename = "gemma-3-4b-it-q4_0.gguf",
+            # repo_id = "google/gemma-3-4b-it-qat-q4_0-gguf",
+            # filename = "gemma-3-4b-it-q4_0.gguf",
+            repo_id="unsloth/Qwen3-14B-GGUF",
+            filename="Qwen3-14B-Q4_K_M.gguf",
             n_gpu_layers = 0 if on_cpu else -1, # -1 offloads ALL layers to the GPU (MPS)
             verbose = verbose,
             n_ctx=n_ctx,
