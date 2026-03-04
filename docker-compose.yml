@@ -31,6 +31,14 @@ services:
     environment:
       - VITE_API_URL=http://localhost:5001
 
+  python_sandbox:
+    build:
+      context: .
+      dockerfile: python_sandbox/Dockerfile
+    container_name: python_sandbox
+    ports:
+      - "50001-50005:50001-50005"
+
 volumes:
   neo4j_data:
   qdrant_storage:
