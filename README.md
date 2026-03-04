@@ -44,13 +44,15 @@ When a user finishes editing a file and triggers the upload, the system doesn't 
 
 ### 3. Multi-Strategy Querying & RAG Systems
 
-Once the data is loaded, users can query the AI agent. The app implements three distinct retrieval strategies to answer research questions:
+Once the data is loaded, users can query the AI agent. The app implements four distinct retrieval strategies to answer research questions:
 
 - **System 1 - Basic RAG**: The user's query is embedded, and the top 5 most similar text chunks are retrieved from the Vector DB and fed directly into the LLM's context.
 
 - **System 2 - Graph-Based RAG**: The query is embedded to find similar nodes in the Vector DB. The system then performs a one-hop reasoning step from these specific nodes in the Neo4j graph, feeding the surrounding relational context to the LLM.
 
 - **System 3 - Agentic Graph Search**: The LLM actively extracts entities and relations from the user's query, attempts to match them within the graph, and selectively follows only the interesting/relevant paths. This prevents the context window from being flooded when encountering "super-nodes" with massive amounts of connections.
+
+- **System 4 - SuperAgentic Search**: The LLM is inserted in a Python REPL and can execute code to explore the graph. It is empowered with 3 functions: `get_similar_nodes`, `get_similar_embeddings` (given a name and a description, it returns ones currently present in the graph) and `execute_cypher` (given a query, it executes it just for research purposes, so no node addition, deletion, or editing).
 
 ## LLM Implementation Details
 
@@ -72,3 +74,32 @@ Because this is an experimental showcase:
 - **Optimization**: Certain parts of the insertion and extraction pipeline can be optimized for speed.
 
 - **CRUD Completeness**: Node/Document deletion and updates are currently not implemented. These features were omitted as they are standard engineering tasks that do not specifically require or demonstrate LLM capabilities.
+
+## Getting Started
+
+### Installation
+
+To install `llama.cpp`, the process depends on the system you are running. Please refer to the [official documentation](https://llama-cpp-python.readthedocs.io/en/latest/) to install it properly for your environment. (With Mac Series M coudld have some problems, they are mentioned in the docs)
+
+### Running the Application
+
+1. Create a virtual environment with Python 3.13 and install the requirements:
+
+```bash
+python3.13 -m venv venv
+source venv/bin/activate  # On Windows use `venv\Scripts\activate`
+pip install -r requirements.txt
+```
+
+
+2. Run the ReactJS frontend, QdrantDB and Neo4jDB:
+```bash
+docker compose up --build
+```
+
+3. Run the Flask backend:
+```bash
+python app.py
+```
+
+4. Reach the webapp at `http://localhost:5173/`
