@@ -44,7 +44,6 @@ class AgenticSearch(Agent):
         except SyntaxError:
             return False
 
-
     def extract_python_code(self, text: str) -> List[str]:
         """
         Extract Python code blocks from arbitrary text.
@@ -110,6 +109,6 @@ class AgenticSearch(Agent):
 
         return sorted(candidates)
 
-    
     def append_code_output(self, output:str):
         self.history.append(self.chat.get_message_format(role="user", content=f"CODE OUTPUT:\n{output}"))
+    

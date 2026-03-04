@@ -1,7 +1,6 @@
 from .sys_prompt import PROPERTIES_MERGER
 from .chat import Chat
 from .agent import Agent
-import json
 
 class PropertiesMerger(Agent):
     def __init__(self, chat:Chat):
@@ -59,3 +58,4 @@ class PropertiesMerger(Agent):
                 mapping[proposed_prop] = existing_prop
                 
         return mapping
+    

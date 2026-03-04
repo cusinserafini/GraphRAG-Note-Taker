@@ -1,13 +1,13 @@
-from agents import Chat
 from embedder import Embedder
+from agents import Chat
 from knowledge_manager import KnowledgeManager
 
 import logging
 
-logging.getLogger("qdrant_client").setLevel(logging.WARNING)
-logging.getLogger("httpx").setLevel(logging.WARNING)
-logging.getLogger("urllib3").setLevel(logging.WARNING)
-logging.getLogger("neo4j").setLevel(logging.WARNING)
+logging.getLogger("qdrant_client").setLevel(logging.ERROR)
+logging.getLogger("httpx").setLevel(logging.ERROR)
+logging.getLogger("urllib3").setLevel(logging.ERROR)
+logging.getLogger("neo4j").setLevel(logging.ERROR)
 
 # models initialization
 embedder = Embedder()

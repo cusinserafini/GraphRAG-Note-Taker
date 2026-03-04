@@ -88,3 +88,4 @@ class Chat:
             stream = streaming,
         )
         return self._stream_without_thinking(stream)
+    

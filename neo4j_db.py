@@ -356,5 +356,3 @@ class Neo4jDBManager:
             # We explicitly enforce the use of execute_read at the driver level to 
             # prevent routing to follower nodes allowing writes in clustered deployments.
             return session.execute_read(_execute_custom_read)
-
-        

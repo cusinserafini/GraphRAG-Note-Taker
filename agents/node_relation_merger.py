@@ -25,45 +25,6 @@ class NodeRelationMerger(Agent):
         selection = self.parse_entity_resolution_output(output)
         return selection
 
-    # def parse_entity_resolution_output(self, llm_response: str):
-    #     """
-    #     Parses the JSON output from the entity resolution agent.
-        
-    #     Args:
-    #         llm_response (str): The raw text output from the LLM.
-            
-    #     Returns:
-    #         int or None: The selected entity index, or None if a new entity must be created.
-    #                     Returns None on failure (or you could choose to raise an exception).
-    #     """
-    #     # 1. Clean the response (strip whitespace and potential markdown backticks)
-    #     cleaned_response = llm_response.strip()
-        
-    #     if cleaned_response.startswith("```json"):
-    #         cleaned_response = cleaned_response[7:]
-    #     elif cleaned_response.startswith("```"):
-    #         cleaned_response = cleaned_response[3:]
-            
-    #     if cleaned_response.endswith("```"):
-    #         cleaned_response = cleaned_response[:-3]
-            
-    #     cleaned_response = cleaned_response.strip()
-
-    #     # 2. Parse the JSON and extract the value
-    #     try:
-    #         data = json.loads(cleaned_response)
-            
-    #         if "selected" in data:
-    #             # Will be an integer or None (since JSON 'null' parses to Python 'None')
-    #             return data["selected"] 
-    #         else:
-    #             print(f"Error: The key 'selected' was not found in the output: {data}")
-    #             return None
-                
-    #     except json.JSONDecodeError as e:
-    #         print(f"Error: Failed to decode JSON. Raw output: '{llm_response}'. Details: {e}")
-    #         return None
-
     def parse_entity_resolution_output(self, llm_response: str):
         """
         Robust parser for LLM responses that contain reasoning plus JSON.
@@ -95,3 +56,4 @@ class NodeRelationMerger(Agent):
         except json.JSONDecodeError as e:
             print(f"Error: Failed to decode JSON. Raw extracted JSON: '{last_json_str}'. Details: {e}")
             return None
+    

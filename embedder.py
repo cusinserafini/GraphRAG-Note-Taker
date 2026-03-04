@@ -46,3 +46,4 @@ class Embedder:
         if len(embeddings.shape) == 1:
             return embeddings[:self.dimensions]
         return embeddings[:, :self.dimensions]
+    

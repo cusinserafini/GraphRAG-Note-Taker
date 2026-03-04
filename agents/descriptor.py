@@ -3,7 +3,6 @@ from .agent import Agent
 from .sys_prompt import DESCRIPTOR
 from .data_types import GraphComponentsDescriptor, GraphInfo
 
-
 class Descriptor(Agent):
     def __init__(self, chat:Chat):
         super(Descriptor, self).__init__(
@@ -86,3 +85,4 @@ class Descriptor(Agent):
                     parsed_data[current_section][name] = description
 
         return parsed_data
+    

@@ -87,7 +87,7 @@ graph_db = Neo4jDBManager(uri="bolt://neo4j:7687")
 vector_db = QdrantDBManager(location=":localhost:", host="qdrant")
 embedder = Embedder()
 
-# functions the llm will use
+# Functions the LLM will use
 get_similar_nodes = get_similar_node_function(embedder, vector_db)
 get_similar_relations = get_similar_relation_function(embedder, vector_db)
 execute_cypher = graph_db.execute_cypher
