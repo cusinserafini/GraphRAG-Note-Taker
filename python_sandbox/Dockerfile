@@ -2,7 +2,7 @@ FROM python:3.11-slim
 RUN pip install --no-cache-dir ipykernel
 RUN pip install --no-cache-dir neo4j
 RUN pip install --no-cache-dir qdrant-client
-RUN pip install --no-cache-dir transformers accelerate sentence_transformers
+RUN pip install --no-cache-dir transformers sentence_transformers
 
 WORKDIR /app
 

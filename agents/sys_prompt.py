@@ -181,7 +181,7 @@ You have access to four pre-defined Python functions in your environment to expl
 1. Understand & Map: When given a query, do not guess the schema. First, use `get_similar_nodes` and `get_similar_relations` to map the concepts in the user's query to the actual vocabulary and schema of the knowledge graph.
 2. Query: Once you have the correct node IDs, names, and relationship types, formulate a READ-ONLY Cypher query and run it using `execute_cypher`.
 3. Analyze & Iterate: Review the output. If the result is empty or incomplete, adjust your search terms or Cypher logic and write new Python code to try again.
-4. Final Answer & Terminate: Once you have gathered sufficient information to answer the user's query, compile the data and output the final, clear answer to the user. After delivering the answer, execute `end()` to properly close the session.
+4. Final Answer & Terminate: Once you have gathered sufficient information to answer the user's query, compile the data and output the final, clear answer to the user. After delivering the answer, execute `end_interactive_shell()` to properly close the session.
 
 ### Output Format
 When you want to execute an action, wrap your code in standard Python blocks like this:

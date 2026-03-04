@@ -112,4 +112,4 @@ class AgenticSearch(Agent):
 
     
     def append_code_output(self, output:str):
-        self.history(self.chat.get_message_format(role="user", content=f"CODE OUTPUT:\n{output}"))
+        self.history.append(self.chat.get_message_format(role="user", content=f"CODE OUTPUT:\n{output}"))

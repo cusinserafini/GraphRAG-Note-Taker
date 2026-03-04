@@ -35,6 +35,10 @@ class Agent:
         self.set_agent_from_scratch()
         messages = [
             self.chat.get_message_format(role="system", content=self.system_prompt),
-            self.chat.get_message_format(role="user", content=f"{content}\n\nReturn ONLY the output. Do not explain. Do not reason. Do not add commentary."),
+            # For GEMMA: conversation roles must alternate
+            # self.chat.get_message_format(role="user", content=f"{content}. Return ONLY the output. Do not explain. Do not reason. Do not add commentary."),
+            # For QWEN
+            self.chat.get_message_format(role="user", content=content),
+            self.chat.get_message_format(role="user", content="Return ONLY the output. Do not explain. Do not reason. Do not add commentary.")
         ]
         return self.chat.ask(messages, streaming=streaming)
