@@ -109,13 +109,11 @@ def ask_question():
         # Route depending on the research type
         if research_type == "RAG":
             # Call the existing ask_question method which returns a generator of tokens
-            generator = kb_manager.ask_question(question)
-        elif research_type in ["Graph", "Agentic"]:
-            # Placeholder for not implemented functionality
-            def dummy_generator():
-                yield {"choices": [{"delta": {"content": "pass"}}]}
-            
-            generator = dummy_generator()
+            generator = kb_manager.ask_question(question, research_type)
+        elif research_type == "Graph":
+            generator = kb_manager.ask_question(question, research_type)
+        elif research_type == "Agentic":
+            generator = kb_manager.ask_question(question, research_type)
         else:
              return jsonify({"error": "Unknown research type"}), 400
         

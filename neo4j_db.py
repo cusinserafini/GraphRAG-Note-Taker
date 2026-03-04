@@ -271,20 +271,37 @@ class Neo4jDBManager:
 
         with self.driver.session() as session:
             return session.execute_read(_execute)
-    
+        
     def get_k_hop_filtered_subgraph(self, node_element_ids: list[str], allowed_rel_types: list[str], depth: int = 1):
         query = f"""
-        MATCH (n)
-        WHERE elementId(n) IN $node_element_ids
-        MATCH (n)-[r*1..{depth}]-(m)
+        MATCH (start)
+        WHERE elementId(start) IN $node_element_ids
+
+        OPTIONAL MATCH path = (start)-[r*1..{depth}]-(m)
         WHERE ALL(rel IN r WHERE type(rel) IN $allowed_rel_types)
-        WITH collect(DISTINCT n) + collect(DISTINCT m) AS nodes
-        UNWIND nodes AS node
-        WITH collect(DISTINCT node) AS nodes
-        UNWIND nodes AS n1
-        OPTIONAL MATCH (n1)-[r]->(n2)
-        WHERE n2 IN nodes
-        RETURN nodes, collect(DISTINCT r) AS relationships
+
+        WITH 
+            collect(DISTINCT start) AS start_nodes,
+            collect(DISTINCT m) AS expanded_nodes,
+            collect(DISTINCT r) AS rel_paths
+
+        WITH 
+            start_nodes,
+            [n IN expanded_nodes WHERE n IS NOT NULL] AS expanded_nodes,
+            [rel IN rel_paths WHERE rel IS NOT NULL | rel] AS valid_paths
+
+        WITH 
+            start_nodes,
+            expanded_nodes,
+            reduce(all_rels = [], path IN valid_paths | all_rels + path) AS relationships
+
+        RETURN 
+            CASE 
+                WHEN size(relationships) = 0 
+                THEN start_nodes
+                ELSE start_nodes + expanded_nodes
+            END AS nodes,
+            relationships
         """
 
         with self.driver.session() as session:
@@ -294,8 +311,10 @@ class Neo4jDBManager:
                 allowed_rel_types=allowed_rel_types
             )
             record = result.single()
+
             if record is None:
                 return {"nodes": [], "relationships": []}
+
             return {
                 "nodes": record["nodes"],
                 "relationships": record["relationships"]

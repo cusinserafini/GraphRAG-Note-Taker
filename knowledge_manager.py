@@ -339,13 +339,21 @@ class KnowledgeManager():
             relation_names=relation_names
         )
 
-    def ask_question(self, query:str):
-        text_chunks = self.retriever.rag(query=query)
-        context = "CONTEXT:\n"
-        for text in text_chunks:
-            context += f"{text}\n\n"
+    def ask_question(self, query:str, method):
+        if method == "RAG":
+            text_chunks = self.retriever.rag(query=query)
+            context = "CONTEXT:\n"
+            for text in text_chunks:
+                context += f"{text}\n\n"
+        elif method == "Graph":
+            context = "CONTEXT:\n"
+            context += self.retriever.retrieve(query, top_k=5, depth=1, agentic=False, chat=None)
+        elif method == "Agentic":
+            context = "CONTEXT:\n"
+            context += self.retriever.retrieve(query, top_k=5, depth=1, agentic=True, chat=self.chat)
         
         messages = [
+            # {"role": "system", "content": "Do not output reasoning. Do not use <think> tags."},
             {"role": "system", "content": "Answer using ONLY the provided context. If not present, say 'Not found in context.'"},
             {"role": "user", "content": f"Context:\n{context}\n\nQuestion: {query}"}
         ]
