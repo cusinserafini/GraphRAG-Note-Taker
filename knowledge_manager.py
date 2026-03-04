@@ -380,18 +380,13 @@ class KnowledgeManager():
                     content="Now that you have finished your reasoning, give the final answer in plain text. Do not include Python code."
                 )
             ]
-            print("ARRIVIAMO AL MESSAGGIO?")
 
-            # def superagentic_stream():
-                # print("DENTRO FUNC")
             for token in self.chat.ask(messages, streaming=True):
                 yield token
 
             sandbox.clear_context()
             sandbox.close()
-
             return
-            # return superagentic_stream()
         
         messages = [
             # {"role": "system", "content": "Do not output reasoning. Do not use <think> tags."},
