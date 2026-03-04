@@ -183,7 +183,7 @@ textarea.markdown-input:focus {
 
 /* Chat Modal */
 .chat-panel {
-  width: 400px;
+  width: 500px;
   background-color: var(--bg-secondary);
   border-left: 1px solid var(--border-color);
   display: flex;

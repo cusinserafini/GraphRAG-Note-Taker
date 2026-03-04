@@ -4,7 +4,7 @@ from knowledge_manager import KnowledgeManager
 
 print("> Knowledge base initialization")
 embedder = Embedder()
-chat = Chat(on_cpu=False, verbose=False)
+chat = Chat(on_cpu=False, verbose=False, n_ctx=8192)
 kb_manager = KnowledgeManager(
     chat=chat,
     embedder=embedder,

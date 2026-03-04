@@ -9,7 +9,8 @@ from qdrant_db import QdrantDBManager
 from embedder import Embedder
 from agents.properties_merger import PropertiesMerger
 from agents.node_relation_merger import NodeRelationMerger
-from agents import GraphInfo, DataExtractor, Descriptor, EdgePayload, NodePayload, GraphNode, AgenticSearch
+from agents.AgenticSearch import AgenticSearch
+from agents import GraphInfo, DataExtractor, Descriptor, EdgePayload, NodePayload, GraphNode
 from python_sandbox.python_sandbox import PythonSandbox
 
 class KnowledgeManager():
@@ -379,15 +380,18 @@ class KnowledgeManager():
                     content="Now that you have finished your reasoning, give the final answer in plain text. Do not include Python code."
                 )
             ]
+            print("ARRIVIAMO AL MESSAGGIO?")
 
-            def superagentic_stream():
-                for token in self.chat.ask(messages, streaming=True):
-                    yield token
+            # def superagentic_stream():
+                # print("DENTRO FUNC")
+            for token in self.chat.ask(messages, streaming=True):
+                yield token
 
-                sandbox.clear_context()
-                sandbox.close()
+            sandbox.clear_context()
+            sandbox.close()
 
-            return superagentic_stream()
+            return
+            # return superagentic_stream()
         
         messages = [
             # {"role": "system", "content": "Do not output reasoning. Do not use <think> tags."},
