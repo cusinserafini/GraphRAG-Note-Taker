@@ -310,6 +310,7 @@ function App() {
               <option value="RAG">RAG</option>
               <option value="Graph">Graph</option>
               <option value="Agentic">Agentic</option>
+              <option value="SuperAgentic">SuperAgentic</option>
             </select>
             <input
               type="text"
