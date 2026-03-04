@@ -9,7 +9,8 @@ from qdrant_db import QdrantDBManager
 from embedder import Embedder
 from agents.properties_merger import PropertiesMerger
 from agents.node_relation_merger import NodeRelationMerger
-from agents import GraphInfo, DataExtractor, Descriptor, EdgePayload, NodePayload, GraphNode
+from agents import GraphInfo, DataExtractor, Descriptor, EdgePayload, NodePayload, GraphNode, AgenticSearch
+from python_sandbox.python_sandbox import PythonSandbox
 
 class KnowledgeManager():
     """
@@ -41,7 +42,7 @@ class KnowledgeManager():
         self.descriptor = Descriptor(chat=self.chat)
         self.node_relation_merger = NodeRelationMerger(self.chat)
         self.properties_merger = PropertiesMerger(self.chat)
-
+        self.agentic_search = AgenticSearch(self.chat)
 
     def _create_nodes_relations_embeddings(self, graph_info:GraphInfo):
         """
@@ -351,6 +352,42 @@ class KnowledgeManager():
         elif method == "Agentic":
             context = "CONTEXT:\n"
             context += self.retriever.retrieve(query, top_k=5, depth=1, agentic=True, chat=self.chat)
+        elif method == "SuperAgentic":
+            sandbox = PythonSandbox(connection_file="python_sandbox/connection.json")
+            # Reset agent state
+            self.agentic_search.history = [self.chat.get_message_format(role="system", content=self.agentic_search.system_prompt)]
+
+            iterations = 0
+            while iterations < 10:
+                _, code_blocks = self.agentic_search(text=query if iterations == 0 else None)
+
+                if not code_blocks:
+                    continue
+                    
+                code_output, error = sandbox.execute_code(code_blocks[0])
+                self.agentic_search.append_code_output(code_output)
+
+                if "end_interactive_shell()" in code_blocks[0]:
+                    break
+
+                iterations += 1
+
+            # Now ask for final plain-text answer
+            messages = self.agentic_search.history + [
+                self.chat.get_message_format(
+                    role="user",
+                    content="Now that you have finished your reasoning, give the final answer in plain text. Do not include Python code."
+                )
+            ]
+
+            def superagentic_stream():
+                for token in self.chat.ask(messages, streaming=True):
+                    yield token
+
+                sandbox.clear_context()
+                sandbox.close()
+
+            return superagentic_stream()
         
         messages = [
             # {"role": "system", "content": "Do not output reasoning. Do not use <think> tags."},

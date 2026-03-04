@@ -114,6 +114,8 @@ def ask_question():
             generator = kb_manager.ask_question(question, research_type)
         elif research_type == "Agentic":
             generator = kb_manager.ask_question(question, research_type)
+        elif research_type == "SuperAgentic":
+            generator = kb_manager.ask_question(question, research_type)
         else:
              return jsonify({"error": "Unknown research type"}), 400
         

@@ -32,7 +32,7 @@ while True:
         break
     iterations += 1
 
-    if iterations > 20:
+    if iterations > 10:
         break
 
 output, _ = agent("Now that you have finished your reasoning, give the answer in plain text without Python code and without the thinking part.")
